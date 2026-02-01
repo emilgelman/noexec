@@ -10,7 +10,10 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "prepare": "npm run build",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
     "debug:init": "node --inspect-brk dist/cli.js init",
     "debug:analyze": "echo '{\"command\": \"test_me\"}' | node --inspect-brk dist/cli.js analyze"
   },
@@ -41,7 +44,9 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "typescript": "^5.3.3"
+    "@vitest/ui": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitest": "^3.2.4"
   },
   "engines": {
     "node": ">=18.0.0"

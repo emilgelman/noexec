@@ -219,12 +219,26 @@ npm run dev
 ### Testing
 
 ```bash
-# Run automated tests
+# Run all tests
 npm test
 
-# Manual testing
-./test-example.sh
+# Run tests in watch mode
+npm run test:watch
+
+# Run tests with coverage report
+npm run test:coverage
+
+# Run tests with UI
+npm run test:ui
+
+# Manual testing scripts (legacy)
+./scripts/test-simple.sh
 ```
+
+**Test Coverage:**
+- 85+ test cases across all detectors
+- Comprehensive edge case testing
+- Both positive and negative test scenarios
 
 ## Architecture
 

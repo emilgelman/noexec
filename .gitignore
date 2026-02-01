@@ -11,6 +11,10 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# Testing
+coverage/
+.nyc_output/
+
 # OS
 .DS_Store
 .DS_Store?
@@ -34,10 +38,6 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 *.tgz
-
-# Testing
-coverage/
-.nyc_output/
 
 # Environment
 .env
