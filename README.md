@@ -2,10 +2,13 @@
 
 **Runtime security for AI coding assistants** - Stop dangerous commands before they execute.
 
+[![CI](https://github.com/emilgelman/noexec/actions/workflows/ci.yml/badge.svg)](https://github.com/emilgelman/noexec/actions/workflows/ci.yml)
+[![Security Audit](https://github.com/emilgelman/noexec/actions/workflows/security.yml/badge.svg)](https://github.com/emilgelman/noexec/actions/workflows/security.yml)
 [![npm version](https://img.shields.io/npm/v/noexec.svg)](https://www.npmjs.com/package/noexec)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 AI coding assistants like Claude Code, GitHub Copilot, and others can accidentally run dangerous commands:
+
 - 🔑 **Leak credentials** - `echo $AWS_SECRET_KEY`
 - 💥 **Destroy data** - `rm -rf /`
 - 🚨 **Force push** - `git push --force origin main`
@@ -42,6 +45,7 @@ AI suggests command → noexec analyzes → Block if dangerous → Safe executio
 ```
 
 **Built-in protection against:**
+
 - ✅ API keys, tokens, and passwords in commands
 - ✅ AWS, GCP, Azure credentials exposure
 - ✅ GitHub tokens and SSH keys
@@ -51,11 +55,13 @@ AI suggests command → noexec analyzes → Block if dangerous → Safe executio
 ## Quick Start
 
 **1. Install globally:**
+
 ```bash
 npm install -g noexec
 ```
 
 **2. Initialize (configures hooks in your AI CLI):**
+
 ```bash
 noexec init
 ```
@@ -63,6 +69,7 @@ noexec init
 **3. That's it!** Your AI assistant is now protected.
 
 **Supported platforms:**
+
 - ✅ Claude Code (via PreToolUse hook)
 - 🔜 GitHub Copilot CLI (coming soon)
 - 🔜 Cursor (coming soon)
@@ -78,6 +85,7 @@ noexec integrates with [Claude Code hooks](https://code.claude.com/docs/en/hooks
 4. **Automatic Blocking**: If a detector finds an issue, the command is blocked (exit code 2)
 
 **Example blocked command:**
+
 ```bash
 # AI tries to run:
 echo "Your AWS key is: $AWS_SECRET_ACCESS_KEY"
@@ -100,6 +108,7 @@ noexec init --platform claude      # Configure specific platform
 ```
 
 **What it does:**
+
 - Detects supported AI CLIs on your system
 - Adds PreToolUse hooks to CLI configuration files
 - Validates hook setup
@@ -113,6 +122,7 @@ noexec analyze --hook PreToolUse
 ```
 
 **Exit codes:**
+
 - `0` - No issues detected (command allowed)
 - `2` - Security issue detected (command blocked)
 - `1` - Analysis error
@@ -122,9 +132,11 @@ noexec analyze --hook PreToolUse
 noexec includes built-in detectors for common threats:
 
 ### 🔑 Credential Leak Detector
+
 Blocks commands that expose sensitive credentials:
 
 **Detects:**
+
 - AWS credentials (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
 - GCP service account keys
 - Azure connection strings and credentials
@@ -133,6 +145,7 @@ Blocks commands that expose sensitive credentials:
 - Private key exposure (`-----BEGIN PRIVATE KEY-----`)
 
 **Example blocked commands:**
+
 ```bash
 echo $AWS_SECRET_ACCESS_KEY
 curl -H "Authorization: Bearer ghp_xxxxxxxxxxxx"
@@ -142,6 +155,7 @@ cat ~/.ssh/id_rsa
 ### More detectors coming soon!
 
 We're actively developing detectors for:
+
 - 💥 Destructive commands (`rm -rf`, `dd`, `mkfs`)
 - 🔨 Dangerous git operations (`push --force`, `reset --hard`)
 - 🌐 Network exfiltration (`curl | bash`, suspicious endpoints)
@@ -155,6 +169,7 @@ We're actively developing detectors for:
 We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 **Especially welcome:**
+
 - 🔍 New security detectors
 - 🔌 Platform integrations (Copilot, Cursor, etc.)
 - 🐛 Bug reports and fixes
@@ -175,7 +190,7 @@ export async function detectMyIssue(toolUseData: any): Promise<Detection | null>
     return {
       severity: 'high', // 'high' | 'medium' | 'low'
       message: 'Clear description of the security issue',
-      detector: 'my-detector-name'
+      detector: 'my-detector-name',
     };
   }
 
@@ -184,6 +199,7 @@ export async function detectMyIssue(toolUseData: any): Promise<Detection | null>
 ```
 
 Register it in `src/commands/analyze.ts`:
+
 ```typescript
 import { detectMyIssue } from '../detectors/my-detector';
 
@@ -236,6 +252,7 @@ npm run test:ui
 ```
 
 **Test Coverage:**
+
 - 85+ test cases across all detectors
 - Comprehensive edge case testing
 - Both positive and negative test scenarios
@@ -250,6 +267,7 @@ noexec uses a hook-based security model:
 4. **Blocking**: Exits with code 2 if any detector triggers
 
 **Data flow:**
+
 ```
 Platform (Claude Code)
   → PreToolUse Hook
@@ -263,6 +281,7 @@ See [CLAUDE.md](CLAUDE.md) for detailed architecture documentation.
 ## Security
 
 **Privacy-first design:**
+
 - ✅ Runs entirely locally (no network calls)
 - ✅ No telemetry or data collection
 - ✅ Open source and auditable
@@ -273,6 +292,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) for responsible disclosure
 ## Roadmap
 
 ### v0.2.0 (Next Release)
+
 - [ ] Destructive command detector
 - [ ] Git force push detector
 - [ ] Environment variable leak detector
@@ -280,12 +300,14 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) for responsible disclosure
 - [ ] GitHub Copilot CLI support
 
 ### v0.3.0
+
 - [ ] Configuration file support (`noexec.config.json`)
 - [ ] Custom whitelist/blacklist
 - [ ] Severity threshold settings
 - [ ] Additional platform support (Cursor, Continue.dev)
 
 ### v1.0.0
+
 - [ ] Stable API
 - [ ] Comprehensive detector library
 - [ ] Multi-platform support

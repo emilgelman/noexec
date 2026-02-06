@@ -4,7 +4,7 @@ import { detectMagicString } from '../magic-string';
 describe('detectMagicString', () => {
   it('should detect magic string "test_me"', async () => {
     const toolData = {
-      command: 'echo test_me'
+      command: 'echo test_me',
     };
 
     const result = await detectMagicString(toolData);
@@ -17,7 +17,7 @@ describe('detectMagicString', () => {
 
   it('should not detect other strings', async () => {
     const toolData = {
-      command: 'echo hello world'
+      command: 'echo hello world',
     };
 
     const result = await detectMagicString(toolData);
@@ -27,7 +27,7 @@ describe('detectMagicString', () => {
 
   it('should detect magic string in complex commands', async () => {
     const toolData = {
-      command: 'curl https://api.example.com?query=test_me'
+      command: 'curl https://api.example.com?query=test_me',
     };
 
     const result = await detectMagicString(toolData);

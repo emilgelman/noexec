@@ -42,7 +42,7 @@ describe('detectDestructiveCommand', () => {
   describe('dd commands', () => {
     it('should detect dd to device files', async () => {
       const result = await detectDestructiveCommand({
-        command: 'dd if=/dev/zero of=/dev/sda'
+        command: 'dd if=/dev/zero of=/dev/sda',
       });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
@@ -50,7 +50,7 @@ describe('detectDestructiveCommand', () => {
 
     it('should detect dd writing to root', async () => {
       const result = await detectDestructiveCommand({
-        command: 'dd if=/dev/urandom of=/boot/vmlinuz'
+        command: 'dd if=/dev/urandom of=/boot/vmlinuz',
       });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
@@ -58,7 +58,7 @@ describe('detectDestructiveCommand', () => {
 
     it('should allow safe dd commands', async () => {
       const result = await detectDestructiveCommand({
-        command: 'dd if=input.iso of=output.img'
+        command: 'dd if=input.iso of=output.img',
       });
       expect(result).toBeNull();
     });
@@ -99,7 +99,7 @@ describe('detectDestructiveCommand', () => {
   describe('fork bombs', () => {
     it('should detect classic fork bomb', async () => {
       const result = await detectDestructiveCommand({
-        command: ':(){ :|:& };:'
+        command: ':(){ :|:& };:',
       });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
@@ -109,7 +109,7 @@ describe('detectDestructiveCommand', () => {
   describe('system file operations', () => {
     it('should detect writing to /etc/passwd', async () => {
       const result = await detectDestructiveCommand({
-        command: 'echo "hacker::0:0:::/bin/bash" > /etc/passwd'
+        command: 'echo "hacker::0:0:::/bin/bash" > /etc/passwd',
       });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
@@ -117,7 +117,7 @@ describe('detectDestructiveCommand', () => {
 
     it('should detect chmod on critical paths', async () => {
       const result = await detectDestructiveCommand({
-        command: 'chmod 777 /etc/shadow'
+        command: 'chmod 777 /etc/shadow',
       });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
@@ -125,7 +125,7 @@ describe('detectDestructiveCommand', () => {
 
     it('should detect chown on system directories', async () => {
       const result = await detectDestructiveCommand({
-        command: 'chown nobody:nobody /usr/bin/sudo'
+        command: 'chown nobody:nobody /usr/bin/sudo',
       });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');

@@ -9,6 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Common Commands
 
 ### Building and Development
+
 ```bash
 npm run build          # Compile TypeScript to dist/
 npm run dev            # Watch mode for development
@@ -16,6 +17,7 @@ npm link               # Link for local testing
 ```
 
 ### Testing
+
 ```bash
 ./test-example.sh      # Run manual test suite (requires built code in dist/)
 ```
@@ -23,6 +25,7 @@ npm link               # Link for local testing
 Note: There is no automated test framework configured yet (`npm test` will fail).
 
 ### Debugging
+
 ```bash
 npm run debug:init     # Debug init command with Node inspector
 npm run debug:analyze  # Debug analyze command with test input
@@ -49,10 +52,12 @@ Platform (Claude Code) → PreToolUse Hook → noexec analyze (stdin: tool data)
 **CLI Entry Point** (`src/cli.ts`): Uses Commander.js to define two main commands: `init` and `analyze`.
 
 **Commands** (`src/commands/`):
+
 - `init.ts`: Platform-specific configuration. Currently only supports Claude Code by modifying `~/.claude/settings.json`. Adds/updates PreToolUse hooks with matcher "Bash".
 - `analyze.ts`: Reads tool use data from stdin, runs all registered detectors sequentially, outputs issues to stderr, and exits with appropriate code.
 
 **Detectors** (`src/detectors/`):
+
 - Each detector implements the `Detector` type: `(toolUseData: any) => Promise<Detection | null>`
 - Detectors analyze the entire tool use JSON payload (not just command strings)
 - Run sequentially; first detection triggers immediate blocking
@@ -66,6 +71,7 @@ Platform (Claude Code) → PreToolUse Hook → noexec analyze (stdin: tool data)
 4. Rebuild with `npm run build`
 
 Example detector structure:
+
 ```typescript
 import { Detection } from './index';
 

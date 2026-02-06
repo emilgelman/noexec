@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
 - Initial open source release
 - MIT License
 - Contributing guidelines
@@ -17,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - 2026-01-31
 
 ### Added
+
 - Basic CLI with `init` and `analyze` commands
 - Claude Code platform support
 - PreToolUse hook integration
@@ -27,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Manual test suite (`test-example.sh`)
 
 ### Known Issues
+
 - No automated test framework yet
 - Only Claude Code platform supported
 - Limited detector library

@@ -11,6 +11,7 @@ We take the security of noexec seriously. If you discover a security vulnerabili
 Instead, email security details to: **emil.gelman@gmail.com**
 
 Include:
+
 - Description of the vulnerability
 - Steps to reproduce
 - Potential impact

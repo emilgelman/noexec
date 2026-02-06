@@ -6,15 +6,19 @@ interface InitOptions {
   platform: string;
 }
 
+interface ClaudeHook {
+  type: string;
+  command: string;
+}
+
+interface ClaudePreToolUse {
+  matcher: string;
+  hooks: ClaudeHook[];
+}
+
 interface ClaudeConfig {
   hooks?: {
-    PreToolUse?: Array<{
-      matcher: string;
-      hooks: Array<{
-        type: string;
-        command: string;
-      }>;
-    }>;
+    PreToolUse?: ClaudePreToolUse[];
   };
 }
 
@@ -29,7 +33,7 @@ export async function initCommand(options: InitOptions): Promise<void> {
   }
 }
 
-async function initClaude(): Promise<void> {
+function initClaude(): Promise<void> {
   const homeDir = os.homedir();
   const claudeDir = path.join(homeDir, '.claude');
   const claudeSettingsPath = path.join(claudeDir, 'settings.json');
@@ -47,31 +51,27 @@ async function initClaude(): Promise<void> {
   if (fs.existsSync(claudeSettingsPath)) {
     console.log('Found existing Claude settings');
     const content = fs.readFileSync(claudeSettingsPath, 'utf-8');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     config = JSON.parse(content);
   } else {
     console.log('No existing Claude settings found, creating new file');
   }
 
-  if (!config.hooks) {
-    config.hooks = {};
-  }
+  config.hooks ??= {};
+  config.hooks.PreToolUse ??= [];
 
-  if (!config.hooks.PreToolUse) {
-    config.hooks.PreToolUse = [];
-  }
-
-  const noexecHook = {
+  const noexecHook: ClaudePreToolUse = {
     matcher: 'Bash',
     hooks: [
       {
         type: 'command',
-        command: 'noexec analyze --hook PreToolUse'
-      }
-    ]
+        command: 'noexec analyze --hook PreToolUse',
+      },
+    ],
   };
 
-  const existingHookIndex = config.hooks.PreToolUse.findIndex(
-    h => h.hooks?.some(hook => hook.command?.includes('noexec analyze'))
+  const existingHookIndex = config.hooks.PreToolUse.findIndex((h) =>
+    h.hooks?.some((hook) => hook.command?.includes('noexec analyze'))
   );
 
   if (existingHookIndex >= 0) {
@@ -85,5 +85,9 @@ async function initClaude(): Promise<void> {
   fs.writeFileSync(claudeSettingsPath, JSON.stringify(config, null, 2), 'utf-8');
   console.log(`\nSuccessfully configured noexec in ${claudeSettingsPath}`);
   console.log('\nnoexec will now analyze Bash commands before execution.');
-  console.log('\nNote: You may need to restart your Claude Code session for the hook to take effect.');
+  console.log(
+    '\nNote: You may need to restart your Claude Code session for the hook to take effect.'
+  );
+
+  return Promise.resolve();
 }

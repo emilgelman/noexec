@@ -4,7 +4,7 @@ import { detectCredentialLeak } from '../credential-leak';
 describe('detectCredentialLeak', () => {
   it('should detect AWS access key patterns', async () => {
     const toolData = {
-      command: 'echo AKIAIOSFODNN7EXAMPLE'
+      command: 'echo AKIAIOSFODNN7EXAMPLE',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -16,7 +16,7 @@ describe('detectCredentialLeak', () => {
 
   it('should detect GitHub personal access tokens', async () => {
     const toolData = {
-      command: 'curl -H "Authorization: token ghp_1234567890123456789012345678901234567890"'
+      command: 'curl -H "Authorization: token ghp_1234567890123456789012345678901234567890"',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -27,7 +27,8 @@ describe('detectCredentialLeak', () => {
 
   it('should detect GitHub classic tokens', async () => {
     const toolData = {
-      command: 'git clone https://gho_1234567890123456789012345678901234567890@github.com/user/repo'
+      command:
+        'git clone https://gho_1234567890123456789012345678901234567890@github.com/user/repo',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -38,7 +39,8 @@ describe('detectCredentialLeak', () => {
 
   it('should detect GitHub fine-grained tokens', async () => {
     const toolData = {
-      command: 'export GITHUB_TOKEN=github_pat_11ABCDEFG1234567890123_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+      command:
+        'export GITHUB_TOKEN=github_pat_11ABCDEFG1234567890123_ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -49,7 +51,7 @@ describe('detectCredentialLeak', () => {
 
   it('should detect generic API keys', async () => {
     const toolData = {
-      command: 'api_key=sk-1234567890abcdefghijklmnopqrstuvwxyz1234567890'
+      command: 'api_key=sk-1234567890abcdefghijklmnopqrstuvwxyz1234567890',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -75,7 +77,7 @@ describe('detectCredentialLeak', () => {
 
   it('should not detect safe commands', async () => {
     const toolData = {
-      command: 'echo "Hello World"'
+      command: 'echo "Hello World"',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -85,7 +87,7 @@ describe('detectCredentialLeak', () => {
 
   it('should not detect short strings that look like keys', async () => {
     const toolData = {
-      command: 'key=short'
+      command: 'key=short',
     };
 
     const result = await detectCredentialLeak(toolData);
@@ -95,7 +97,8 @@ describe('detectCredentialLeak', () => {
 
   it('should detect credentials in complex commands', async () => {
     const toolData = {
-      command: 'curl -X POST https://api.example.com -H "Authorization: Bearer ghp_1234567890123456789012345678901234567890" -d "data"'
+      command:
+        'curl -X POST https://api.example.com -H "Authorization: Bearer ghp_1234567890123456789012345678901234567890" -d "data"',
     };
 
     const result = await detectCredentialLeak(toolData);

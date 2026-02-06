@@ -27,6 +27,7 @@ New detectors are especially welcome! To add a detector:
 
 1. Create a new file in `src/detectors/` (e.g., `my-detector.ts`)
 2. Export an async function matching the `Detector` type:
+
    ```typescript
    import { Detection } from './index';
 
@@ -44,6 +45,7 @@ New detectors are especially welcome! To add a detector:
      return null;
    }
    ```
+
 3. Add your detector to `src/commands/analyze.ts` in the `detectors` array
 4. Write tests in `src/detectors/__tests__/my-detector.test.ts`
 5. Document what your detector catches in your PR description

@@ -8,7 +8,9 @@ const program = new Command();
 
 program
   .name('noexec')
-  .description('Security scanner for agentic CLIs - prevents dangerous commands and credential leaks')
+  .description(
+    'Security scanner for agentic CLIs - prevents dangerous commands and credential leaks'
+  )
   .version('0.1.0');
 
 program

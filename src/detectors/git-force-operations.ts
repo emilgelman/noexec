@@ -1,4 +1,4 @@
-import { Detection } from './index';
+import type { Detection, ToolUseData } from '../types';
 
 /**
  * Detects dangerous git operations that can cause data loss or collaboration issues
@@ -38,18 +38,19 @@ const GIT_DANGEROUS_PATTERNS = [
   /\bgit\s+update-ref\s+-d/,
 ];
 
-export async function detectGitForceOperation(toolUseData: any): Promise<Detection | null> {
+export function detectGitForceOperation(toolUseData: ToolUseData): Promise<Detection | null> {
   const toolInput = JSON.stringify(toolUseData);
 
   for (const pattern of GIT_DANGEROUS_PATTERNS) {
     if (pattern.test(toolInput)) {
-      return {
+      return Promise.resolve({
         severity: 'high',
-        message: 'Dangerous git operation detected - can cause data loss or overwrite remote history',
-        detector: 'git-force-operation'
-      };
+        message:
+          'Dangerous git operation detected - can cause data loss or overwrite remote history',
+        detector: 'git-force-operation',
+      });
     }
   }
 
-  return null;
+  return Promise.resolve(null);
 }

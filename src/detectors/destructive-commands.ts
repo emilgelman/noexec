@@ -1,4 +1,4 @@
-import { Detection } from './index';
+import type { Detection, ToolUseData } from '../types';
 
 /**
  * Detects destructive commands that can cause data loss or system damage
@@ -25,7 +25,7 @@ const DESTRUCTIVE_PATTERNS = [
   /\bshred\b/,
 
   // Dangerous wildcards in rm
-  /\brm\s+(-[a-zA-Z]*r[a-zA-Z]*\s+)?[\/*]$/,
+  /\brm\s+(-[a-zA-Z]*r[a-zA-Z]*\s+)?[/*]$/,
 
   // wipefs (wipe filesystem signatures)
   /\bwipefs\b/,
@@ -37,18 +37,19 @@ const DESTRUCTIVE_PATTERNS = [
   /\b(?:chmod|chown)\b[^\n]*(?:\/etc|\/bin|\/sbin|\/usr|\/boot|\/dev|\/sys)/,
 ];
 
-export async function detectDestructiveCommand(toolUseData: any): Promise<Detection | null> {
+export function detectDestructiveCommand(toolUseData: ToolUseData): Promise<Detection | null> {
   const toolInput = JSON.stringify(toolUseData);
 
   for (const pattern of DESTRUCTIVE_PATTERNS) {
     if (pattern.test(toolInput)) {
-      return {
+      return Promise.resolve({
         severity: 'high',
-        message: 'Potentially destructive command detected - could cause data loss or system damage',
-        detector: 'destructive-command'
-      };
+        message:
+          'Potentially destructive command detected - could cause data loss or system damage',
+        detector: 'destructive-command',
+      });
     }
   }
 
-  return null;
+  return Promise.resolve(null);
 }

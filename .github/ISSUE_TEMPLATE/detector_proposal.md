@@ -4,7 +4,6 @@ about: Propose a new security detector
 title: '[DETECTOR] '
 labels: detector, enhancement
 assignees: ''
-
 ---
 
 **Detector Name**
@@ -14,6 +13,7 @@ What should this detector be called?
 Describe the security issue or dangerous pattern this detector should catch.
 
 **Example commands that should be blocked:**
+
 ```bash
 # Example 1
 command here

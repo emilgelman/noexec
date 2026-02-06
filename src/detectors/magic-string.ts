@@ -1,15 +1,15 @@
-import { Detection } from './index';
+import type { Detection, ToolUseData } from '../types';
 
-export async function detectMagicString(toolUseData: any): Promise<Detection | null> {
+export function detectMagicString(toolUseData: ToolUseData): Promise<Detection | null> {
   const toolInput = JSON.stringify(toolUseData);
 
   if (toolInput.includes('test_me')) {
-    return {
+    return Promise.resolve({
       severity: 'high',
       message: 'Magic string "test_me" detected in tool input',
-      detector: 'magic-string'
-    };
+      detector: 'magic-string',
+    });
   }
 
-  return null;
+  return Promise.resolve(null);
 }

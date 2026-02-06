@@ -1,4 +1,4 @@
-import { Detection } from './index';
+import type { Detection, ToolUseData } from '../types';
 
 /**
  * Detects environment variables containing secrets being exposed in commands
@@ -51,31 +51,32 @@ const DANGEROUS_COMMAND_CONTEXTS = [
   /\bgit\s+commit\b[^\n]*\$/,
 ];
 
-export async function detectEnvVarLeak(toolUseData: any): Promise<Detection | null> {
+export function detectEnvVarLeak(toolUseData: ToolUseData): Promise<Detection | null> {
   const toolInput = JSON.stringify(toolUseData);
 
   // Check for sensitive environment variables
   for (const pattern of SENSITIVE_ENV_VAR_PATTERNS) {
     if (pattern.test(toolInput)) {
       // Extra check: is it in a dangerous context?
-      const hasDangerousContext = DANGEROUS_COMMAND_CONTEXTS.some(ctx => ctx.test(toolInput));
+      const hasDangerousContext = DANGEROUS_COMMAND_CONTEXTS.some((ctx) => ctx.test(toolInput));
 
       if (hasDangerousContext) {
-        return {
+        return Promise.resolve({
           severity: 'high',
-          message: 'Environment variable containing sensitive data detected in command output or network request',
-          detector: 'env-var-leak'
-        };
+          message:
+            'Environment variable containing sensitive data detected in command output or network request',
+          detector: 'env-var-leak',
+        });
       } else {
         // Still flag it, but lower severity if not in obviously dangerous context
-        return {
+        return Promise.resolve({
           severity: 'medium',
           message: 'Environment variable containing potential secrets detected in command',
-          detector: 'env-var-leak'
-        };
+          detector: 'env-var-leak',
+        });
       }
     }
   }
 
-  return null;
+  return Promise.resolve(null);
 }

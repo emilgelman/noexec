@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import type { Detection, ToolUseData } from '../types';
 import { detectCredentialLeak } from '../detectors/credential-leak';
 import { detectMagicString } from '../detectors/magic-string';
 import { detectDestructiveCommand } from '../detectors/destructive-commands';
@@ -9,13 +10,7 @@ interface AnalyzeOptions {
   hook: string;
 }
 
-interface Detection {
-  severity: 'high' | 'medium' | 'low';
-  message: string;
-  detector: string;
-}
-
-export async function analyzeCommand(options: AnalyzeOptions): Promise<void> {
+export async function analyzeCommand(_options: AnalyzeOptions): Promise<void> {
   try {
     const stdin = fs.readFileSync(0, 'utf-8');
 
@@ -23,7 +18,7 @@ export async function analyzeCommand(options: AnalyzeOptions): Promise<void> {
       process.exit(0);
     }
 
-    const toolUseData = JSON.parse(stdin);
+    const toolUseData = JSON.parse(stdin) as ToolUseData;
 
     const detectors = [
       detectDestructiveCommand,
