@@ -35,6 +35,28 @@ export const DEFAULT_CONFIG: NoExecConfig = {
         'PRIVATE_KEY',
       ],
     },
+    'binary-download-execute': {
+      enabled: true,
+      severity: 'high',
+      trustedDomains: [],
+    },
+    'security-tool-disabling': {
+      enabled: true,
+      severity: 'high',
+    },
+    'backdoor-persistence': {
+      enabled: true,
+      severity: 'high',
+    },
+    'container-escape': {
+      enabled: true,
+      severity: 'high',
+      allowPrivilegedForCI: false,
+    },
+    'credential-harvesting': {
+      enabled: true,
+      severity: 'high',
+    },
     'magic-string': {
       enabled: true,
       severity: 'high',

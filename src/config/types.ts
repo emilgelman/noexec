@@ -31,12 +31,24 @@ export interface MagicStringConfig {
   severity: 'high' | 'medium' | 'low';
 }
 
+export interface SecurityToolDisablingConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface ArchiveBombConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
 export interface DetectorsConfig {
   'credential-leak': CredentialLeakConfig;
   'destructive-commands': DestructiveCommandsConfig;
   'git-force-operations': GitForceOperationsConfig;
   'env-var-leak': EnvVarLeakConfig;
   'magic-string': MagicStringConfig;
+  'security-tool-disabling': SecurityToolDisablingConfig;
+  'archive-bomb': ArchiveBombConfig;
 }
 
 export interface GlobalSettings {

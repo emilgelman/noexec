@@ -2376,6 +2376,7 @@ npm test
 | **Network Exfiltration**       | Data theft via network, reverse shells, DNS leaks      | High         | Multi-layer detection, safe operation whitelist               |
 | **Security Tool Disabling**    | Disabling firewalls, AV, SELinux, logging, updates     | High         | 8 categories, safe status checks allowed                      |
 | **Backdoor/Persistence**       | Cron, systemd, SSH keys, profiles, SUID, LD_PRELOAD    | **Critical** | 10 persistence mechanisms, real-world attack patterns         |
+| **Container Escape**           | Privileged containers, socket mounts, namespace escape | **High**     | 12 escape techniques, Docker/K8s/Podman, CI/CD exceptions     |
 | **Magic String**               | Test detector (development only)                       | N/A          | Example for contributors                                      |
 
 Each detector is designed to catch real security issues while minimizing false positives through:

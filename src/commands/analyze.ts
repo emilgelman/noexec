@@ -6,6 +6,7 @@ import { detectMagicString } from '../detectors/magic-string';
 import { detectDestructiveCommand } from '../detectors/destructive-commands';
 import { detectGitForceOperation } from '../detectors/git-force-operations';
 import { detectEnvVarLeak } from '../detectors/env-var-leak';
+import { detectSecurityToolDisabling } from '../detectors/security-tool-disabling';
 import { loadConfig, type NoExecConfig } from '../config';
 
 interface AnalyzeOptions {

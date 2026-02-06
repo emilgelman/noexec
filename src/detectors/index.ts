@@ -1,6 +1,7 @@
 export type { Detection, Detector, ToolUseData } from '../types';
 
 export { detectCredentialLeak } from './credential-leak';
+export { detectCredentialHarvesting } from './credential-harvesting';
 export { detectDestructiveCommand } from './destructive-commands';
 export { detectGitForceOperations } from './git-force-operations';
 export { detectEnvVarLeak } from './env-var-leak';
