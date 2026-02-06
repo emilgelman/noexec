@@ -67,6 +67,7 @@ export default tseslint.config(
       '**/*.test.ts',
       '**/*.spec.ts',
       '*.config.js',
+      '*.config.mjs',
       '*.config.ts',
       'index.js',
     ],
