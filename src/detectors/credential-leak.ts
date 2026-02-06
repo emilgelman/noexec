@@ -49,6 +49,10 @@ const SERVICE_SPECIFIC_PATTERNS = [
 
   // PyPI tokens
   /pypi-[a-zA-Z0-9_-]{90,}/,
+
+  // Credentials in URLs (git, http, etc.)
+  // Pattern: https://username:token@github.com or https://token@github.com
+  /https?:\/\/(?:[^:/\s]+:)?([a-zA-Z0-9_-]{20,})@[^\s]+/,
 ];
 
 // Generic credential patterns (require context/entropy checking)

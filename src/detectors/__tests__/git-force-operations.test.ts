@@ -117,12 +117,11 @@ describe('detectGitForceOperation', () => {
   });
 
   describe('branch operations', () => {
-    it('should detect git branch -D', async () => {
+    it('should allow git branch -D (local branch deletion is safe)', async () => {
       const result = await detectGitForceOperation({
         command: 'git branch -D old-branch',
       });
-      expect(result).not.toBeNull();
-      expect(result?.severity).toBe('high');
+      expect(result).toBeNull(); // Local branch deletion is intentionally allowed
     });
 
     it('should allow normal branch deletion', async () => {
@@ -130,6 +129,14 @@ describe('detectGitForceOperation', () => {
         command: 'git branch -d merged-branch',
       });
       expect(result).toBeNull();
+    });
+
+    it('should detect force-delete of remote branch', async () => {
+      const result = await detectGitForceOperation({
+        command: 'git push origin :feature-branch',
+      });
+      expect(result).not.toBeNull();
+      expect(result?.severity).toBe('high');
     });
   });
 

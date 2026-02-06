@@ -48,8 +48,11 @@ const DESTRUCTIVE_PATTERNS = [
   // Overwrite important system files
   />\s*\/(?:etc\/passwd|etc\/shadow|boot\/|dev\/)/,
 
-  // chmod/chown on critical paths
+  // chmod/chown on critical paths or root directory
   /\b(?:chmod|chown)\b[^\n]*(?:\/etc|\/bin|\/sbin|\/usr\/bin|\/usr\/sbin|\/boot|\/dev|\/sys)/,
+
+  // Dangerous recursive chmod on root or home
+  /\bchmod\s+(?:-R|--recursive)\s+[0-7]{3}\s+(?:\/(?:\s|$)|~\/?\s)/,
 
   // Disk filling attacks
   /\bdd\s+if=\/dev\/zero/,

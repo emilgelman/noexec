@@ -23,8 +23,8 @@ const GIT_DANGEROUS_PATTERNS = [
   /\bgit\s+checkout\s+[^\n]*--force/,
   /\bgit\s+checkout\s+[^\n]*-f\s/,
 
-  // Branch deletion with force
-  /\bgit\s+branch\s+[^\n]*-D\b/,
+  // Note: git branch -D (local branch deletion) is intentionally NOT included
+  // as it only affects local branches and is a common, safe operation
 
   // Prune with dangerous flags
   /\bgit\s+(?:remote\s+)?prune\s+[^\n]*--force/,

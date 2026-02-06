@@ -97,7 +97,7 @@ export async function analyzeStdin(input: string, config?: NoExecConfig): Promis
   const detections: Detection[] = [];
 
   for (const detector of detectors) {
-    const result = await detector.fn(toolUseData, detector.config);
+    const result = await detector.fn(toolUseData, detector.config as never);
     if (result && shouldReportDetection(result, activeConfig)) {
       detections.push(result);
     }

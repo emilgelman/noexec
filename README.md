@@ -105,6 +105,7 @@ Configures security hooks in supported AI coding assistants.
 ```bash
 noexec init                        # Auto-detect platform
 noexec init --platform claude      # Configure specific platform
+noexec init --config               # Generate default config file
 ```
 
 **What it does:**
@@ -112,6 +113,7 @@ noexec init --platform claude      # Configure specific platform
 - Detects supported AI CLIs on your system
 - Adds PreToolUse hooks to CLI configuration files
 - Validates hook setup
+- Optionally generates `noexec.config.json` for customization
 
 ### `noexec analyze`
 
@@ -119,6 +121,7 @@ Analyzes commands for security issues (typically called automatically by hooks).
 
 ```bash
 noexec analyze --hook PreToolUse
+noexec analyze --config path/to/config.json
 ```
 
 **Exit codes:**
@@ -126,6 +129,57 @@ noexec analyze --hook PreToolUse
 - `0` - No issues detected (command allowed)
 - `2` - Security issue detected (command blocked)
 - `1` - Analysis error
+
+### `noexec validate-config`
+
+Validates a noexec configuration file.
+
+```bash
+noexec validate-config                      # Validates ./noexec.config.json
+noexec validate-config path/to/config.json  # Validates custom config
+```
+
+## Configuration
+
+NoExec supports flexible configuration to customize detector behavior and thresholds. See [CONFIG.md](./CONFIG.md) for full documentation.
+
+**Quick start:**
+
+```bash
+noexec init --config  # Generate default config
+```
+
+**Example configuration:**
+
+```json
+{
+  "detectors": {
+    "credential-leak": {
+      "enabled": true,
+      "severity": "high",
+      "minEntropy": 4.0,
+      "customPatterns": ["mycompany_[a-zA-Z0-9]{32}"]
+    },
+    "git-force-operations": {
+      "enabled": true,
+      "protectedBranches": ["main", "master", "production"]
+    }
+  },
+  "globalSettings": {
+    "minSeverity": "medium",
+    "exitOnDetection": true,
+    "jsonOutput": false
+  }
+}
+```
+
+**Config locations** (first found wins):
+
+1. Custom path via `--config` flag
+2. Project root: `./noexec.config.json`
+3. User home: `~/.noexec/config.json`
+
+For detailed configuration options, see [CONFIG.md](./CONFIG.md).
 
 ## Security Detectors
 
@@ -152,12 +206,67 @@ curl -H "Authorization: Bearer ghp_xxxxxxxxxxxx"
 cat ~/.ssh/id_rsa
 ```
 
-### More detectors coming soon!
+### 💥 Destructive Command Detector
 
-We're actively developing detectors for:
+Prevents data loss from dangerous operations:
 
-- 💥 Destructive commands (`rm -rf`, `dd`, `mkfs`)
-- 🔨 Dangerous git operations (`push --force`, `reset --hard`)
+**Detects:**
+
+- `rm -rf` with dangerous paths or wildcards
+- Disk operations (`dd`, `mkfs`, `fdisk`)
+- Fork bombs and resource exhaustion attacks
+- Mass process killers (`kill -9 -1`, `pkill -U`)
+- System damage (`wipefs`, `shred`, kernel panics)
+- Safe paths allowlist (e.g., `./node_modules`, `./dist`)
+
+**Example blocked commands:**
+
+```bash
+rm -rf /
+dd if=/dev/zero of=/dev/sda
+kill -9 -1
+```
+
+### 🔀 Git Force Operation Detector
+
+Protects repositories from destructive git operations:
+
+**Detects:**
+
+- Force push to protected branches (main, master, production, etc.)
+- Suggests safer alternatives (`--force-with-lease`)
+- Customizable branch protection
+
+**Example blocked commands:**
+
+```bash
+git push --force origin main
+git push -f origin master
+```
+
+### 🌍 Environment Variable Leak Detector
+
+Prevents accidental exposure of sensitive environment variables:
+
+**Detects:**
+
+- Export commands with sensitive variable names
+- Common credential patterns (SECRET, TOKEN, KEY, PASSWORD, API)
+- Environment variable echoing
+
+**Example blocked commands:**
+
+```bash
+export AWS_SECRET_ACCESS_KEY=xxx
+echo $DATABASE_PASSWORD
+```
+
+### 🔮 Magic String Detector
+
+Identifies hardcoded sensitive data patterns (proof of concept).
+
+**Coming Soon:**
+
 - 🌐 Network exfiltration (`curl | bash`, suspicious endpoints)
 - 🗄️ Database operations (`DROP DATABASE`, unsafe `DELETE`)
 - 🐳 Docker risks (`--privileged`, mounting sensitive paths)
@@ -297,27 +406,42 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) for responsible disclosure
 
 ## Roadmap
 
-### v0.2.0 (Next Release)
+### ✅ v1.0.0 (Current Release)
 
-- [ ] Destructive command detector
-- [ ] Git force push detector
-- [ ] Environment variable leak detector
-- [ ] Automated test suite with >80% coverage
-- [ ] GitHub Copilot CLI support
+- ✅ Destructive command detector
+- ✅ Git force push detector
+- ✅ Environment variable leak detector
+- ✅ Credential leak detector with entropy analysis
+- ✅ Magic string detector
+- ✅ Automated test suite with 130+ tests
+- ✅ Colored CLI output with helpful suggestions
+- ✅ Comprehensive documentation
+- ✅ CI/CD pipeline with GitHub Actions
+- ✅ npm package ready for distribution
 
-### v0.3.0
+### v1.1.0 (Next)
 
 - [ ] Configuration file support (`noexec.config.json`)
-- [ ] Custom whitelist/blacklist
-- [ ] Severity threshold settings
-- [ ] Additional platform support (Cursor, Continue.dev)
+- [ ] Custom detector plugins
+- [ ] Whitelist/blacklist for specific patterns
+- [ ] Per-detector configuration overrides
+- [ ] JSON output mode for programmatic use
 
-### v1.0.0
+### v1.2.0
 
-- [ ] Stable API
-- [ ] Comprehensive detector library
-- [ ] Multi-platform support
-- [ ] Plugin system for custom detectors
+- [ ] GitHub Copilot CLI support
+- [ ] Cursor IDE support
+- [ ] Continue.dev support
+- [ ] VSCode extension
+- [ ] Interactive mode for ambiguous detections
+
+### v2.0.0
+
+- [ ] Machine learning-based detectors
+- [ ] Centralized policy management for teams
+- [ ] Cloud-based threat intelligence (opt-in)
+- [ ] Audit logging and reporting
+- [ ] Web dashboard for security insights
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 

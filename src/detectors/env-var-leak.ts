@@ -74,6 +74,9 @@ const INDIRECT_DUMP_PATTERNS = [
 
   // Print env to files
   /\b(?:env|printenv)\s*>[^>]/,
+
+  // Direct access to process environment
+  /\bcat\s+\/proc\/(?:self|[0-9]+)\/environ\b/,
 ];
 
 // Safe contexts where env vars are just being checked, not exposed

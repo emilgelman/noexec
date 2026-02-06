@@ -8,7 +8,7 @@ import { validateConfig, ConfigValidationError } from './validator';
 /**
  * Deep merge two objects, with source overriding target
  */
-function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial<T>): T {
+function deepMerge<T>(target: T, source: Partial<T>): T {
   const result = { ...target };
 
   for (const key in source) {
@@ -27,10 +27,7 @@ function deepMerge<T extends Record<string, unknown>>(target: T, source: Partial
       targetValue !== null &&
       !Array.isArray(targetValue)
     ) {
-      result[key] = deepMerge(
-        targetValue as Record<string, unknown>,
-        sourceValue as Record<string, unknown>
-      ) as T[Extract<keyof T, string>];
+      result[key] = deepMerge(targetValue, sourceValue as Partial<typeof targetValue>);
     } else {
       result[key] = sourceValue as T[Extract<keyof T, string>];
     }
@@ -84,7 +81,7 @@ function getConfigPaths(customPath?: string): string[] {
  * Load and merge config from multiple sources
  */
 export function loadConfig(customPath?: string): NoExecConfig {
-  let mergedConfig = { ...DEFAULT_CONFIG };
+  let mergedConfig: NoExecConfig = { ...DEFAULT_CONFIG };
   const configPaths = getConfigPaths(customPath);
 
   for (const configPath of configPaths) {
