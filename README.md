@@ -162,6 +162,12 @@ We're actively developing detectors for:
 - 🗄️ Database operations (`DROP DATABASE`, unsafe `DELETE`)
 - 🐳 Docker risks (`--privileged`, mounting sensitive paths)
 
+## Documentation
+
+- **[Architecture](ARCHITECTURE.md)** - Deep dive into noexec's system design, component architecture, and data flow
+- **[Detectors](DETECTORS.md)** - Complete reference for all security detectors, patterns, and detection logic
+- **[Troubleshooting](TROUBLESHOOTING.md)** - Solutions for common issues, debugging tips, and FAQ
+
 ## For Developers
 
 ### Contributing
