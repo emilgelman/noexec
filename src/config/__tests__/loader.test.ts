@@ -146,7 +146,10 @@ describe('Config Loader', () => {
       const configPath = generateConfigFile();
 
       expect(fs.existsSync(configPath)).toBe(true);
-      expect(configPath).toBe(path.join(testDir, 'noexec.config.json'));
+      // Normalize paths to handle macOS /private/var symlinks
+      expect(fs.realpathSync(configPath)).toBe(
+        fs.realpathSync(path.join(testDir, 'noexec.config.json'))
+      );
 
       const content = fs.readFileSync(configPath, 'utf-8');
       const parsed = JSON.parse(content);
