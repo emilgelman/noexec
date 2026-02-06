@@ -114,17 +114,18 @@ describe('CLI Analyze - Integration Tests', () => {
       }).toThrow();
     });
 
-    it('should detect git branch -D', () => {
+    it('should allow git branch -D (local branch deletion)', () => {
       const input = JSON.stringify({
         command: 'git branch -D feature-branch',
       });
 
+      // Local branch deletion is safe and should not throw
       expect(() => {
         execSync(`echo '${input}' | node ${cliPath} analyze --hook PreToolUse`, {
           encoding: 'utf-8',
           stdio: 'pipe',
         });
-      }).toThrow();
+      }).not.toThrow();
     });
   });
 

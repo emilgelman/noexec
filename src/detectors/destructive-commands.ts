@@ -51,8 +51,8 @@ const DESTRUCTIVE_PATTERNS = [
   // chmod/chown on critical paths or root directory
   /\b(?:chmod|chown)\b[^\n]*(?:\/etc|\/bin|\/sbin|\/usr\/bin|\/usr\/sbin|\/boot|\/dev|\/sys)/,
 
-  // Dangerous recursive chmod on root or home
-  /\bchmod\s+(?:-R|--recursive)\s+[0-7]{3}\s+(?:\/(?:\s|$)|~\/?\s)/,
+  // Dangerous recursive chmod on root or home (handles JSON escaping)
+  /\bchmod\s+(?:-R|--recursive)\s+[0-7]{3}\s+(?:["']?\/["']?(?:\s|,|}|$)|~)/,
 
   // Disk filling attacks
   /\bdd\s+if=\/dev\/zero/,
