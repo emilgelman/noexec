@@ -3,7 +3,7 @@ import type { BackdoorPersistenceConfig } from '../config/types';
 
 /**
  * Detects attempts to establish persistent access to a system
- * 
+ *
  * This detector identifies backdoor and persistence mechanisms that attackers
  * use to maintain access even after reboots or cleanup attempts.
  */
@@ -12,7 +12,7 @@ import type { BackdoorPersistenceConfig } from '../config/types';
 const CRON_PATTERNS = [
   // Cron job editing/creation
   /\bcrontab\s+-e\b/,
-  /\bcrontab\s+[^-\s][^\n]*/,  // crontab with file argument
+  /\bcrontab\s+[^-\s][^\n]*/, // crontab with file argument
   /\becho\b[^\n]*>>\s*\/etc\/cron\./,
   /\becho\b[^\n]*>\s*\/etc\/cron\./,
   /\bcat\b[^\n]*>>\s*\/etc\/cron\./,
@@ -46,27 +46,27 @@ const SYSTEMD_PATTERNS = [
 // SSH key manipulation patterns
 const SSH_KEY_PATTERNS = [
   // Adding to authorized_keys
-  /echo\b[^\n]*>>\s*[~\/].*\.ssh\/authorized_keys/,
-  /cat\b[^\n]*>>\s*[~\/].*\.ssh\/authorized_keys/,
+  /echo\b[^\n]*>>\s*[~/].*\.ssh\/authorized_keys/,
+  /cat\b[^\n]*>>\s*[~/].*\.ssh\/authorized_keys/,
   /tee\b[^\n]*-a[^\n]*\.ssh\/authorized_keys/,
-  />\s*[~\/].*\.ssh\/authorized_keys\b/,
+  />\s*[~/].*\.ssh\/authorized_keys\b/,
   // SSH key generation and installation
   /ssh-keygen\b.*&&.*authorized_keys/,
   /ssh-copy-id\b/,
   // Writing to SSH directories
-  /echo\b[^\n]*>\s*[~\/].*\.ssh\//,
-  /cat\b[^\n]*>\s*[~\/].*\.ssh\//,
+  /echo\b[^\n]*>\s*[~/].*\.ssh\//,
+  /cat\b[^\n]*>\s*[~/].*\.ssh\//,
 ];
 
 // Shell profile manipulation patterns
 const SHELL_PROFILE_PATTERNS = [
   // Modifying shell initialization files
-  /echo\b[^\n]*>>\s*[~\/].*\.bashrc\b/,
-  /echo\b[^\n]*>>\s*[~\/].*\.bash_profile\b/,
-  /echo\b[^\n]*>>\s*[~\/].*\.profile\b/,
-  /echo\b[^\n]*>>\s*[~\/].*\.zshrc\b/,
-  /echo\b[^\n]*>>\s*[~\/].*\.zprofile\b/,
-  /echo\b[^\n]*>>\s*[~\/].*\.zshenv\b/,
+  /echo\b[^\n]*>>\s*[~/].*\.bashrc\b/,
+  /echo\b[^\n]*>>\s*[~/].*\.bash_profile\b/,
+  /echo\b[^\n]*>>\s*[~/].*\.profile\b/,
+  /echo\b[^\n]*>>\s*[~/].*\.zshrc\b/,
+  /echo\b[^\n]*>>\s*[~/].*\.zprofile\b/,
+  /echo\b[^\n]*>>\s*[~/].*\.zshenv\b/,
   /echo\b[^\n]*>>\s*\/etc\/profile\b/,
   /echo\b[^\n]*>>\s*\/etc\/bash\.bashrc\b/,
   /echo\b[^\n]*>>\s*\/etc\/zsh\/zshrc\b/,
@@ -74,9 +74,9 @@ const SHELL_PROFILE_PATTERNS = [
   /tee\b[^\n]*-a[^\n]*\.bashrc\b/,
   /tee\b[^\n]*-a[^\n]*\.zshrc\b/,
   /tee\b[^\n]*-a[^\n]*\.profile\b/,
-  /cat\b[^\n]*>>\s*[~\/].*\.bashrc\b/,
-  /cat\b[^\n]*>>\s*[~\/].*\.zshrc\b/,
-  /cat\b[^\n]*>>\s*[~\/].*\.profile\b/,
+  /cat\b[^\n]*>>\s*[~/].*\.bashrc\b/,
+  /cat\b[^\n]*>>\s*[~/].*\.zshrc\b/,
+  /cat\b[^\n]*>>\s*[~/].*\.profile\b/,
 ];
 
 // Startup script manipulation patterns
@@ -91,9 +91,9 @@ const STARTUP_SCRIPT_PATTERNS = [
   /echo\b[^\n]*>\s*\/etc\/init\.d\//,
   /cat\b[^\n]*>\s*\/etc\/init\.d\//,
   // Autostart directories
-  />\s*[~\/].*\.config\/autostart\//,
-  /echo\b[^\n]*>\s*[~\/].*\.config\/autostart\//,
-  /cat\b[^\n]*>\s*[~\/].*\.config\/autostart\//,
+  />\s*[~/].*\.config\/autostart\//,
+  /echo\b[^\n]*>\s*[~/].*\.config\/autostart\//,
+  /cat\b[^\n]*>\s*[~/].*\.config\/autostart\//,
   // XDG autostart
   />\s*\/etc\/xdg\/autostart\//,
 ];
@@ -183,15 +183,15 @@ const SAFE_PATTERNS = [
   /^systemctl\s+is-enabled\b/,
   /^systemctl\s+is-active\b/,
   // Reading SSH keys (not adding)
-  /^cat\s+[~\/].*\.ssh\/authorized_keys\s*$/,
-  /^less\s+[~\/].*\.ssh\/authorized_keys\s*$/,
-  /^more\s+[~\/].*\.ssh\/authorized_keys\s*$/,
-  /^head\s+[~\/].*\.ssh\/authorized_keys\s*$/,
-  /^tail\s+[~\/].*\.ssh\/authorized_keys\s*$/,
+  /^cat\s+[~/].*\.ssh\/authorized_keys\s*$/,
+  /^less\s+[~/].*\.ssh\/authorized_keys\s*$/,
+  /^more\s+[~/].*\.ssh\/authorized_keys\s*$/,
+  /^head\s+[~/].*\.ssh\/authorized_keys\s*$/,
+  /^tail\s+[~/].*\.ssh\/authorized_keys\s*$/,
   // Reading shell profiles (not modifying)
-  /^cat\s+[~\/].*\.bashrc\s*$/,
-  /^cat\s+[~\/].*\.zshrc\s*$/,
-  /^less\s+[~\/].*\.(bashrc|zshrc|profile)\s*$/,
+  /^cat\s+[~/].*\.bashrc\s*$/,
+  /^cat\s+[~/].*\.zshrc\s*$/,
+  /^less\s+[~/].*\.(bashrc|zshrc|profile)\s*$/,
   // Listing at jobs (not creating)
   /^atq\s*$/,
   /^at\s+-l\s*$/,
@@ -202,13 +202,13 @@ const SAFE_PATTERNS = [
  */
 function isSafeOperation(command: string): boolean {
   const trimmedCommand = command.trim();
-  
+
   for (const pattern of SAFE_PATTERNS) {
     if (pattern.test(trimmedCommand)) {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -216,46 +216,46 @@ function isSafeOperation(command: string): boolean {
  * Get a specific message based on the detected pattern
  */
 function getDetectionMessage(toolInput: string): string {
-  if (CRON_PATTERNS.some(p => p.test(toolInput))) {
+  if (CRON_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Cron job manipulation detected - potential persistence mechanism';
   }
-  
-  if (SYSTEMD_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (SYSTEMD_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Systemd service manipulation detected - potential persistence mechanism';
   }
-  
-  if (SSH_KEY_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (SSH_KEY_PATTERNS.some((p) => p.test(toolInput))) {
     return 'SSH key manipulation detected - potential backdoor access';
   }
-  
-  if (SHELL_PROFILE_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (SHELL_PROFILE_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Shell profile modification detected - potential persistence mechanism';
   }
-  
-  if (STARTUP_SCRIPT_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (STARTUP_SCRIPT_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Startup script manipulation detected - potential persistence mechanism';
   }
-  
-  if (SUID_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (SUID_PATTERNS.some((p) => p.test(toolInput))) {
     return 'SUID bit manipulation detected - potential privilege escalation backdoor';
   }
-  
-  if (LD_PRELOAD_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (LD_PRELOAD_PATTERNS.some((p) => p.test(toolInput))) {
     return 'LD_PRELOAD manipulation detected - potential library injection backdoor';
   }
-  
-  if (LOGIN_MANIPULATION_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (LOGIN_MANIPULATION_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Login system manipulation detected - potential backdoor account creation';
   }
-  
-  if (BROWSER_EXTENSION_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (BROWSER_EXTENSION_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Browser extension installation detected - potential persistence mechanism';
   }
-  
-  if (AT_BATCH_PATTERNS.some(p => p.test(toolInput))) {
+
+  if (AT_BATCH_PATTERNS.some((p) => p.test(toolInput))) {
     return 'Scheduled job creation detected - potential persistence mechanism';
   }
-  
+
   return 'Backdoor/persistence mechanism detected';
 }
 

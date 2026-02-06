@@ -2958,7 +2958,6 @@ Currently, the detector is always enabled with hardcoded severity levels. Future
 
 ---
 
-
 ---
 
 ## Process Manipulation Detector
@@ -2991,6 +2990,7 @@ Attaching debuggers to running processes:
   - `lldb --attach-name nginx`
 
 **Why dangerous:** Debugger attachment allows:
+
 - Reading process memory (passwords, tokens, secrets)
 - Modifying process behavior
 - Injecting code
@@ -3022,6 +3022,7 @@ Reading or dumping process memory:
   - `find /proc -name maps`
 
 **Why dangerous:** Memory dumps reveal:
+
 - Credentials in memory
 - Encryption keys
 - Session tokens
@@ -3040,6 +3041,7 @@ Direct use of ptrace system call:
 - LD_PRELOAD with ptrace libraries
 
 **Why dangerous:** ptrace enables:
+
 - Low-level process control
 - Memory manipulation
 - System call interception
@@ -3064,6 +3066,7 @@ Injecting code into running processes:
   - `ruby process_inject.rb 9999`
 
 **Why dangerous:** Process injection allows:
+
 - Code execution in other processes
 - Privilege escalation
 - Bypassing security boundaries
@@ -3086,6 +3089,7 @@ Hiding processes from monitoring tools:
   - `export LD_PRELOAD=/lib/hide.so`
 
 **Why dangerous:** Process hiding enables:
+
 - Evading detection
 - Hiding malware
 - Concealing backdoors
@@ -3116,6 +3120,7 @@ Killing security and monitoring processes:
   - `kill -19 $(pgrep falco)`
 
 **Why dangerous:** Killing security processes:
+
 - Disables monitoring
 - Prevents detection
 - Allows malware to run undetected
@@ -3131,6 +3136,7 @@ Enabling or manipulating core dumps:
 - `sysctl -w fs.suid_dumpable=1`
 
 **Why dangerous:** Core dumps can:
+
 - Extract sensitive data from memory
 - Expose credentials
 - Reveal encryption keys
@@ -3152,6 +3158,7 @@ Manipulating process priority:
   - `ionice -c 1 myprocess` - Real-time I/O
 
 **Why dangerous:** Priority manipulation can:
+
 - Starve other processes
 - Cause denial of service
 - Evade detection (low priority)
@@ -3175,6 +3182,7 @@ Manipulating process namespaces:
   - `ip netns exec myns bash`
 
 **Why dangerous:** Namespace manipulation enables:
+
 - Container escape
 - Privilege escalation
 - Isolation bypass
@@ -3198,6 +3206,7 @@ Injecting libraries via LD_PRELOAD:
   - `export LD_LIBRARY_PATH=/dev/shm`
 
 **Why dangerous:** LD_PRELOAD allows:
+
 - Function hooking
 - System call interception
 - Rootkit functionality
@@ -3477,6 +3486,7 @@ const allPatterns = [
 ```
 
 ---
+
 ## Magic String Detector
 
 **File:** `src/detectors/magic-string.ts`

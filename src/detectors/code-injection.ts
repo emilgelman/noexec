@@ -118,7 +118,7 @@ const SQL_INJECTION_PATTERNS = [
   // JavaScript string concatenation with SQL keywords
   /(?:query|execute)\s*\([^)]*\\?["'][^"']*\+[^)]*\)/,
 
-  // JavaScript template literals with SQL  
+  // JavaScript template literals with SQL
   /(?:query|execute)\s*\(`[^`]*\$\{[^}]*\}[^`]*(?:SELECT|INSERT|UPDATE|DELETE)/i,
 
   // PHP mysqli/mysql with concatenation
@@ -248,9 +248,9 @@ const SAFE_PATTERNS = [
   /subprocess\.[a-zA-Z_]+\s*\(\s*\[[^\]]*\](?!.*shell\s*=\s*True)/,
 
   // system/exec in comments explaining not to use them
-  /[#\/]\s*[Dd]o\s+not\s+use\s+(?:eval|exec)/,
-  /[#\/]\s*[Aa]void\s+(?:eval|exec)/,
-  /[#\/]\s*[Nn]ever\s+use\s+(?:eval|exec)/,
+  /[#/]\s*[Dd]o\s+not\s+use\s+(?:eval|exec)/,
+  /[#/]\s*[Aa]void\s+(?:eval|exec)/,
+  /[#/]\s*[Nn]ever\s+use\s+(?:eval|exec)/,
 ];
 
 /**
