@@ -10,32 +10,37 @@ interface AnalyzeOptions {
   hook: string;
 }
 
+export async function analyzeStdin(input: string): Promise<Detection[]> {
+  if (!input.trim()) {
+    return [];
+  }
+
+  const toolUseData = JSON.parse(input) as ToolUseData;
+
+  const detectors = [
+    detectDestructiveCommand,
+    detectGitForceOperation,
+    detectCredentialLeak,
+    detectEnvVarLeak,
+    detectMagicString,
+  ];
+
+  const detections: Detection[] = [];
+
+  for (const detector of detectors) {
+    const result = await detector(toolUseData);
+    if (result) {
+      detections.push(result);
+    }
+  }
+
+  return detections;
+}
+
 export async function analyzeCommand(_options: AnalyzeOptions): Promise<void> {
   try {
     const stdin = fs.readFileSync(0, 'utf-8');
-
-    if (!stdin.trim()) {
-      process.exit(0);
-    }
-
-    const toolUseData = JSON.parse(stdin) as ToolUseData;
-
-    const detectors = [
-      detectDestructiveCommand,
-      detectGitForceOperation,
-      detectCredentialLeak,
-      detectEnvVarLeak,
-      detectMagicString,
-    ];
-
-    const detections: Detection[] = [];
-
-    for (const detector of detectors) {
-      const result = await detector(toolUseData);
-      if (result) {
-        detections.push(result);
-      }
-    }
+    const detections = await analyzeStdin(stdin);
 
     if (detections.length > 0) {
       console.error('\n⚠️  Security issues detected:\n');

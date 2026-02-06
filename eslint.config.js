@@ -48,6 +48,17 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', '*.config.js', '*.config.ts', 'index.js'],
+    // Relax rules for test files
+    files: ['**/*.test.ts', '**/*.spec.ts', 'test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/unbound-method': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
+    ignores: ['dist/', 'node_modules/', 'coverage/', '*.config.js', '*.config.ts', 'index.js'],
   }
 );
