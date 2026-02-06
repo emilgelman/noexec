@@ -8,9 +8,11 @@
 - [Destructive Commands Detector](#destructive-commands-detector)
 - [Git Force Operations Detector](#git-force-operations-detector)
 - [Environment Variable Leak Detector](#environment-variable-leak-detector)
+- [Code Injection Detector](#code-injection-detector)
 - [Binary Download & Execute Detector](#binary-download--execute-detector)
 - [Network Exfiltration Detector](#network-exfiltration-detector)
 - [Backdoor/Persistence Detector](#backdoorpersistence-detector)
+- [Container Escape Detector](#container-escape-detector)
 - [Magic String Detector](#magic-string-detector)
 
 ---
@@ -2363,16 +2365,17 @@ npm test
 
 ## Summary
 
-| Detector                      | What It Catches                                        | Severity     | Key Features                                                  |
-| ----------------------------- | ------------------------------------------------------ | ------------ | ------------------------------------------------------------- |
-| **Credential Leak**           | API keys, tokens, secrets hardcoded in commands        | High         | 15+ service patterns, entropy analysis, placeholder detection |
-| **Destructive Commands**      | rm -rf, disk operations, fork bombs, system damage     | High         | Safe path whitelist, context-aware                            |
-| **Git Force Operations**      | Force push, hard reset, history rewriting              | High/Medium  | Allows --force-with-lease, protected branches                 |
-| **Env Var Leak**              | Secrets in environment variables exposed to output     | High/Medium  | Context-aware (safe vs dangerous usage), indirect dumps       |
-| **Binary Download & Execute** | Download + execute without verification, pipe to shell | High         | Whitelisted trusted installers, domain trust list             |
-| **Network Exfiltration**      | Data theft via network, reverse shells, DNS leaks      | High         | Multi-layer detection, safe operation whitelist               |
-| **Backdoor/Persistence**      | Cron, systemd, SSH keys, profiles, SUID, LD_PRELOAD    | **Critical** | 10 persistence mechanisms, real-world attack patterns         |
-| **Magic String**              | Test detector (development only)                       | N/A          | Example for contributors                                      |
+| Detector                       | What It Catches                                        | Severity     | Key Features                                                  |
+| ------------------------------ | ------------------------------------------------------ | ------------ | ------------------------------------------------------------- |
+| **Credential Leak**            | API keys, tokens, secrets hardcoded in commands        | High         | 15+ service patterns, entropy analysis, placeholder detection |
+| **Destructive Commands**       | rm -rf, disk operations, fork bombs, system damage     | High         | Safe path whitelist, context-aware                            |
+| **Git Force Operations**       | Force push, hard reset, history rewriting              | High/Medium  | Allows --force-with-lease, protected branches                 |
+| **Env Var Leak**               | Secrets in environment variables exposed to output     | High/Medium  | Context-aware (safe vs dangerous usage), indirect dumps       |
+| **Binary Download & Execute**  | Download + execute without verification, pipe to shell | High         | Whitelisted trusted installers, domain trust list             |
+| **Network Exfiltration**       | Data theft via network, reverse shells, DNS leaks      | High         | Multi-layer detection, safe operation whitelist               |
+| **Security Tool Disabling**    | Disabling firewalls, AV, SELinux, logging, updates     | High         | 8 categories, safe status checks allowed                      |
+| **Backdoor/Persistence**       | Cron, systemd, SSH keys, profiles, SUID, LD_PRELOAD    | **Critical** | 10 persistence mechanisms, real-world attack patterns         |
+| **Magic String**               | Test detector (development only)                       | N/A          | Example for contributors                                      |
 
 Each detector is designed to catch real security issues while minimizing false positives through:
 
