@@ -1,4 +1,5 @@
 import type { Detection, ToolUseData } from '../types';
+import type { GitForceOperationsConfig } from '../config/types';
 
 /**
  * Detects dangerous git operations that can cause data loss or collaboration issues
@@ -59,19 +60,22 @@ function extractPushBranch(command: string): string | null {
 /**
  * Check if force push is to a protected branch
  */
-function isForceToProtectedBranch(command: string): boolean {
+function isForceToProtectedBranch(command: string, protectedBranches: string[]): boolean {
   const branch = extractPushBranch(command);
   if (!branch) return false;
 
-  return PROTECTED_BRANCHES.some((protected_) => branch === protected_);
+  return protectedBranches.some((protected_) => branch === protected_);
 }
 
 /**
  * Determine severity based on context
  */
-function getSeverity(command: string): 'high' | 'medium' {
+function getSeverity(command: string, protectedBranches: string[]): 'high' | 'medium' {
   // Force push to main/master/production is HIGH severity
-  if (/\bgit\s+push.*--force/.test(command) && isForceToProtectedBranch(command)) {
+  if (
+    /\bgit\s+push.*--force/.test(command) &&
+    isForceToProtectedBranch(command, protectedBranches)
+  ) {
     return 'high';
   }
 
@@ -84,15 +88,33 @@ function getSeverity(command: string): 'high' | 'medium' {
   return 'high';
 }
 
-export function detectGitForceOperation(toolUseData: ToolUseData): Promise<Detection | null> {
+export function detectGitForceOperation(
+  toolUseData: ToolUseData,
+  config?: GitForceOperationsConfig
+): Promise<Detection | null> {
+  if (config && !config.enabled) {
+    return Promise.resolve(null);
+  }
+
+  const protectedBranches = config?.protectedBranches ?? PROTECTED_BRANCHES;
+  const allowForceWithLease = config?.allowForceWithLease ?? true;
+  const configSeverity = config?.severity ?? 'high';
+
   const toolInput = JSON.stringify(toolUseData);
+
+  // If force-with-lease is allowed, skip those patterns
+  if (allowForceWithLease && /\bgit\s+push\s+[^\n]*--force-with-lease/.test(toolInput)) {
+    return Promise.resolve(null);
+  }
 
   for (const pattern of GIT_DANGEROUS_PATTERNS) {
     if (pattern.test(toolInput)) {
-      const severity = getSeverity(toolInput);
+      const severity = getSeverity(toolInput, protectedBranches);
+      // Use config severity if explicitly set, otherwise use calculated severity
+      const finalSeverity = config?.severity ? configSeverity : severity;
 
       return Promise.resolve({
-        severity,
+        severity: finalSeverity,
         message:
           severity === 'high'
             ? 'Dangerous git operation detected - can cause data loss or overwrite remote history'

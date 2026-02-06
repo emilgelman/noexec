@@ -1,4 +1,5 @@
 import type { Detection, ToolUseData } from '../types';
+import type { CredentialLeakConfig } from '../config/types';
 
 // Service-specific credential patterns (high confidence - always alert)
 const SERVICE_SPECIFIC_PATTERNS = [
@@ -121,14 +122,43 @@ function hasSufficientEntropy(value: string, minEntropy = 3.0): boolean {
   return calculateEntropy(value) >= minEntropy;
 }
 
-export function detectCredentialLeak(toolUseData: ToolUseData): Promise<Detection | null> {
+export function detectCredentialLeak(
+  toolUseData: ToolUseData,
+  config?: CredentialLeakConfig
+): Promise<Detection | null> {
+  if (config && !config.enabled) {
+    return Promise.resolve(null);
+  }
+
+  const minEntropy = config?.minEntropy ?? 3.0;
+  const ignorePlaceholders = config?.ignorePlaceholders ?? true;
+  const severity = config?.severity ?? 'high';
+  const customPatterns = config?.customPatterns ?? [];
+
   const toolInput = JSON.stringify(toolUseData);
+
+  // Check custom patterns first if provided
+  for (const patternStr of customPatterns) {
+    try {
+      const pattern = new RegExp(patternStr);
+      if (pattern.test(toolInput)) {
+        return Promise.resolve({
+          severity,
+          message: 'Custom credential pattern detected',
+          detector: 'credential-leak',
+        });
+      }
+    } catch {
+      // Invalid regex pattern, skip it
+      console.warn(`Invalid custom pattern: ${patternStr}`);
+    }
+  }
 
   // Check service-specific patterns first (high confidence, no false positive checks needed)
   for (const pattern of SERVICE_SPECIFIC_PATTERNS) {
     if (pattern.test(toolInput)) {
       return Promise.resolve({
-        severity: 'high',
+        severity,
         message: 'Service-specific credential detected (GitHub, AWS, Stripe, Slack, etc.)',
         detector: 'credential-leak',
       });
@@ -140,18 +170,18 @@ export function detectCredentialLeak(toolUseData: ToolUseData): Promise<Detectio
     const match = pattern.exec(toolInput);
     const credentialValue = match?.[captureGroup];
     if (credentialValue) {
-      // Skip if it looks like a placeholder
-      if (isPlaceholder(credentialValue)) {
+      // Skip if it looks like a placeholder (if enabled)
+      if (ignorePlaceholders && isPlaceholder(credentialValue)) {
         continue;
       }
 
       // Require sufficient entropy for generic patterns
-      if (!hasSufficientEntropy(credentialValue)) {
+      if (!hasSufficientEntropy(credentialValue, minEntropy)) {
         continue;
       }
 
       return Promise.resolve({
-        severity: 'high',
+        severity,
         message: 'Potential credential or API key detected in command',
         detector: 'credential-leak',
       });

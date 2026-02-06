@@ -10,4 +10,13 @@ export interface Detection {
   detector: string;
 }
 
-export type Detector = (toolUseData: ToolUseData) => Promise<Detection | null>;
+export interface DetectorConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+  [key: string]: unknown;
+}
+
+export type Detector<TConfig extends DetectorConfig = DetectorConfig> = (
+  toolUseData: ToolUseData,
+  config?: TConfig
+) => Promise<Detection | null>;

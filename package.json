@@ -1,15 +1,23 @@
 {
   "name": "noexec",
-  "version": "0.1.0",
-  "description": "Runtime security for AI coding assistants - prevent dangerous commands and credential leaks",
+  "version": "1.0.0",
+  "description": "Runtime security for AI coding assistants - prevent dangerous commands and credential leaks before they execute",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "bin": {
     "noexec": "./dist/cli.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "prepare": "husky",
+    "prepublishOnly": "npm run build && npm test",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
@@ -23,14 +31,23 @@
   "keywords": [
     "security",
     "ai",
+    "ai-security",
+    "ai-safety",
     "claude-code",
     "github-copilot",
-    "ai-security",
+    "openai",
+    "anthropic",
     "credential-leak",
+    "credential-detection",
     "hooks",
     "cli-security",
     "developer-tools",
-    "ai-safety"
+    "devtools",
+    "runtime-security",
+    "command-filtering",
+    "destructive-commands",
+    "static-analysis",
+    "security-scanner"
   ],
   "author": "Emil Gelman <emil.gelman@gmail.com>",
   "license": "MIT",
@@ -43,6 +60,7 @@
   },
   "homepage": "https://github.com/emilgelman/noexec#readme",
   "dependencies": {
+    "chalk": "^5.4.1",
     "commander": "^12.1.0"
   },
   "devDependencies": {
@@ -64,6 +82,7 @@
   "engines": {
     "node": ">=18.0.0"
   },
+  "peerDependencies": {},
   "lint-staged": {
     "*.{ts,js}": [
       "eslint --fix",

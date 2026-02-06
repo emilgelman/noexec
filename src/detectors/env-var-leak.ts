@@ -1,4 +1,5 @@
 import type { Detection, ToolUseData } from '../types';
+import type { EnvVarLeakConfig } from '../config/types';
 
 /**
  * Detects environment variables containing secrets being exposed in commands
@@ -93,14 +94,41 @@ function isSafeContext(command: string): boolean {
   return false;
 }
 
-export function detectEnvVarLeak(toolUseData: ToolUseData): Promise<Detection | null> {
+/**
+ * Build sensitive env var patterns from config
+ */
+function buildSensitivePatterns(sensitiveVars: string[]): RegExp[] {
+  const patterns: RegExp[] = [...SENSITIVE_ENV_VAR_PATTERNS];
+
+  // Add custom sensitive vars
+  for (const varName of sensitiveVars) {
+    // Escape special regex characters in var name
+    const escaped = varName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    patterns.push(new RegExp(`\\$${escaped}\\b`));
+    patterns.push(new RegExp(`\\bexport\\s+${escaped}\\s*=`));
+  }
+
+  return patterns;
+}
+
+export function detectEnvVarLeak(
+  toolUseData: ToolUseData,
+  config?: EnvVarLeakConfig
+): Promise<Detection | null> {
+  if (config && !config.enabled) {
+    return Promise.resolve(null);
+  }
+
+  const sensitiveVars = config?.sensitiveVars ?? [];
+  const severity = config?.severity ?? 'high';
+
   const toolInput = JSON.stringify(toolUseData);
 
   // Check for indirect dumps first (high priority)
   for (const pattern of INDIRECT_DUMP_PATTERNS) {
     if (pattern.test(toolInput)) {
       return Promise.resolve({
-        severity: 'high',
+        severity,
         message:
           'Command dumps environment variables to output - may expose multiple secrets at once',
         detector: 'env-var-leak',
@@ -113,23 +141,27 @@ export function detectEnvVarLeak(toolUseData: ToolUseData): Promise<Detection | 
     return Promise.resolve(null);
   }
 
+  // Build patterns including custom sensitive vars
+  const sensitivePatterns = buildSensitivePatterns(sensitiveVars);
+
   // Check for sensitive environment variables
-  for (const pattern of SENSITIVE_ENV_VAR_PATTERNS) {
+  for (const pattern of sensitivePatterns) {
     if (pattern.test(toolInput)) {
       // Extra check: is it in a dangerous context?
       const hasDangerousContext = DANGEROUS_COMMAND_CONTEXTS.some((ctx) => ctx.test(toolInput));
 
       if (hasDangerousContext) {
         return Promise.resolve({
-          severity: 'high',
+          severity,
           message:
             'Environment variable containing sensitive data detected in command output or network request',
           detector: 'env-var-leak',
         });
       } else {
         // Still flag it, but lower severity if not in obviously dangerous context
+        const contextSeverity = severity === 'high' ? 'medium' : 'low';
         return Promise.resolve({
-          severity: 'medium',
+          severity: contextSeverity,
           message: 'Environment variable containing potential secrets detected in command',
           detector: 'env-var-leak',
         });

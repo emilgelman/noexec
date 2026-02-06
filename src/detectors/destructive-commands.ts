@@ -1,4 +1,5 @@
 import type { Detection, ToolUseData } from '../types';
+import type { DestructiveCommandsConfig } from '../config/types';
 
 /**
  * Detects destructive commands that can cause data loss or system damage
@@ -79,12 +80,29 @@ const DESTRUCTIVE_PATTERNS = [
 /**
  * Check if a path is in the safe list
  */
-function isSafePath(path: string): boolean {
+function isSafePath(path: string, safePaths: string[]): boolean {
+  // Convert string patterns to regex
+  const safePatterns = safePaths.map((pattern) => {
+    // If it looks like a regex-friendly pattern, use it; otherwise escape it
+    if (pattern.includes('*') || pattern.includes('.')) {
+      return new RegExp(pattern.replace(/\./g, '\\.').replace(/\*/g, '.*'));
+    }
+    return new RegExp(`^${pattern.replace(/\//g, '\\/')}`);
+  });
+
+  for (const safePattern of safePatterns) {
+    if (safePattern.test(path)) {
+      return true;
+    }
+  }
+
+  // Also check built-in safe paths
   for (const safePattern of SAFE_PATHS) {
     if (safePattern.test(path)) {
       return true;
     }
   }
+
   return false;
 }
 
@@ -97,22 +115,51 @@ function extractRmPath(command: string): string | null {
   return match ? match[1] : null;
 }
 
-export function detectDestructiveCommand(toolUseData: ToolUseData): Promise<Detection | null> {
+export function detectDestructiveCommand(
+  toolUseData: ToolUseData,
+  config?: DestructiveCommandsConfig
+): Promise<Detection | null> {
+  if (config && !config.enabled) {
+    return Promise.resolve(null);
+  }
+
+  const safePaths = config?.safePaths ?? [];
+  const additionalPatterns = config?.additionalPatterns ?? [];
+  const severity = config?.severity ?? 'high';
+
   const toolInput = JSON.stringify(toolUseData);
 
   // Special handling for rm commands - check if path is safe
   if (/\brm\s+-[a-zA-Z]*r[a-zA-Z]*/.test(toolInput)) {
     const path = extractRmPath(toolInput);
-    if (path && isSafePath(path)) {
+    if (path && isSafePath(path, safePaths)) {
       // This is a safe rm operation (like rm -rf ./node_modules)
       return Promise.resolve(null);
     }
   }
 
+  // Check additional custom patterns
+  for (const patternStr of additionalPatterns) {
+    try {
+      const pattern = new RegExp(patternStr);
+      if (pattern.test(toolInput)) {
+        return Promise.resolve({
+          severity,
+          message: 'Custom destructive pattern detected',
+          detector: 'destructive-command',
+        });
+      }
+    } catch {
+      // Invalid regex pattern, skip it
+      console.warn(`Invalid additional pattern: ${patternStr}`);
+    }
+  }
+
+  // Check built-in destructive patterns
   for (const pattern of DESTRUCTIVE_PATTERNS) {
     if (pattern.test(toolInput)) {
       return Promise.resolve({
-        severity: 'high',
+        severity,
         message:
           'Potentially destructive command detected - could cause data loss or system damage',
         detector: 'destructive-command',

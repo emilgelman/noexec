@@ -1,35 +1,104 @@
 import * as fs from 'fs';
+import chalk from 'chalk';
 import type { Detection, ToolUseData } from '../types';
 import { detectCredentialLeak } from '../detectors/credential-leak';
 import { detectMagicString } from '../detectors/magic-string';
 import { detectDestructiveCommand } from '../detectors/destructive-commands';
 import { detectGitForceOperation } from '../detectors/git-force-operations';
 import { detectEnvVarLeak } from '../detectors/env-var-leak';
+import { loadConfig, type NoExecConfig } from '../config';
 
 interface AnalyzeOptions {
   hook: string;
+  config?: string;
 }
 
-export async function analyzeStdin(input: string): Promise<Detection[]> {
+/**
+ * Get color and icon for severity level
+ */
+function formatSeverity(severity: string): string {
+  switch (severity) {
+    case 'high':
+      return chalk.red.bold('🚨 HIGH');
+    case 'medium':
+      return chalk.yellow.bold('⚠️  MEDIUM');
+    case 'low':
+      return chalk.blue.bold('ℹ️  LOW');
+    default:
+      return chalk.gray.bold(`❓ ${severity.toUpperCase()}`);
+  }
+}
+
+/**
+ * Get helpful suggestion based on detector type
+ */
+function getSuggestion(detector: string): string | null {
+  const suggestions: Record<string, string> = {
+    'git-force-operation':
+      'Consider using --force-with-lease instead of --force for safer force-pushing.',
+    'destructive-command':
+      'Review the command carefully. Consider using trash/mv for safer file deletion.',
+    'credential-leak':
+      'Never hardcode credentials. Use environment variables or secret managers instead.',
+    'env-var-leak': 'Avoid exporting sensitive variables. Consider using .env files or vaults.',
+    'magic-string':
+      'Hardcoded sensitive data detected. Use configuration files or environment variables.',
+  };
+  return suggestions[detector] || null;
+}
+
+function shouldReportDetection(detection: Detection, config: NoExecConfig): boolean {
+  const severityOrder = { low: 0, medium: 1, high: 2 };
+  const minSeverityLevel = severityOrder[config.globalSettings.minSeverity];
+  const detectionLevel = severityOrder[detection.severity];
+
+  return detectionLevel >= minSeverityLevel;
+}
+
+export async function analyzeStdin(input: string, config?: NoExecConfig): Promise<Detection[]> {
   if (!input.trim()) {
     return [];
   }
 
-  const toolUseData = JSON.parse(input) as ToolUseData;
+  let toolUseData: ToolUseData;
+  try {
+    toolUseData = JSON.parse(input) as ToolUseData;
+  } catch (error) {
+    throw new Error(
+      `Invalid JSON input: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  const activeConfig = config ?? loadConfig();
 
   const detectors = [
-    detectDestructiveCommand,
-    detectGitForceOperation,
-    detectCredentialLeak,
-    detectEnvVarLeak,
-    detectMagicString,
+    {
+      fn: detectDestructiveCommand,
+      config: activeConfig.detectors['destructive-commands'],
+    },
+    {
+      fn: detectGitForceOperation,
+      config: activeConfig.detectors['git-force-operations'],
+    },
+    {
+      fn: detectCredentialLeak,
+      config: activeConfig.detectors['credential-leak'],
+    },
+    {
+      fn: detectEnvVarLeak,
+      config: activeConfig.detectors['env-var-leak'],
+    },
+    {
+      fn: detectMagicString,
+      config: activeConfig.detectors['magic-string'],
+    },
   ];
 
   const detections: Detection[] = [];
 
   for (const detector of detectors) {
-    const result = await detector(toolUseData);
-    if (result) {
+    const result = await detector.fn(toolUseData, detector.config);
+    if (result && shouldReportDetection(result, activeConfig)) {
       detections.push(result);
     }
   }
@@ -37,23 +106,52 @@ export async function analyzeStdin(input: string): Promise<Detection[]> {
   return detections;
 }
 
-export async function analyzeCommand(_options: AnalyzeOptions): Promise<void> {
+export async function analyzeCommand(options: AnalyzeOptions): Promise<void> {
   try {
+    const config = loadConfig(options.config);
     const stdin = fs.readFileSync(0, 'utf-8');
-    const detections = await analyzeStdin(stdin);
+    const detections = await analyzeStdin(stdin, config);
 
     if (detections.length > 0) {
-      console.error('\n⚠️  Security issues detected:\n');
-      for (const detection of detections) {
-        console.error(`[${detection.severity.toUpperCase()}] ${detection.message}`);
-        console.error(`  Detector: ${detection.detector}\n`);
+      if (config.globalSettings.jsonOutput) {
+        console.log(JSON.stringify({ detections }, null, 2));
+      } else {
+        console.error(chalk.red.bold('\n🛡️  Security Issues Detected\n'));
+        console.error(chalk.gray('─'.repeat(60)) + '\n');
+
+        for (const detection of detections) {
+          console.error(formatSeverity(detection.severity) + ' ' + chalk.white(detection.message));
+          console.error(chalk.gray(`   Detector: ${detection.detector}`));
+
+          const suggestion = getSuggestion(detection.detector);
+          if (suggestion) {
+            console.error(chalk.cyan(`   💡 Tip: ${suggestion}`));
+          }
+          console.error('');
+        }
+
+        console.error(chalk.gray('─'.repeat(60)));
+        console.error(
+          chalk.yellow(
+            `\n⚡ Found ${detections.length} security ${detections.length === 1 ? 'issue' : 'issues'}. Review before proceeding.\n`
+          )
+        );
       }
-      process.exit(2);
+
+      if (config.globalSettings.exitOnDetection) {
+        process.exit(2);
+      }
     }
 
+    // Success - no issues detected
     process.exit(0);
   } catch (error) {
-    console.error('Error analyzing tool use:', error);
+    if (error instanceof Error) {
+      console.error(chalk.red(`\n❌ Error: ${error.message}\n`));
+    } else {
+      console.error(chalk.red('\n❌ An unexpected error occurred\n'));
+    }
+    // Exit 0 on error to not block the tool (fail-open for safety)
     process.exit(0);
   }
 }
