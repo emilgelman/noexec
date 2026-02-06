@@ -17,6 +17,8 @@ import { detectContainerEscape } from '../detectors/container-escape';
 import { detectArchiveBomb } from '../detectors/archive-bomb';
 import { detectProcessManipulation } from '../detectors/process-manipulation';
 import { loadConfig, type NoExecConfig } from '../config';
+import { reportDetection } from '../api-client';
+import { isPlatformEnabled } from '../config/platform';
 
 interface AnalyzeOptions {
   hook: string;
@@ -181,6 +183,23 @@ export async function analyzeCommand(options: AnalyzeOptions): Promise<void> {
     const detections = await analyzeStdin(stdin, config);
 
     if (detections.length > 0) {
+      // Report detections to platform if enabled
+      if (isPlatformEnabled()) {
+        try {
+          const toolUseData = JSON.parse(stdin) as ToolUseData;
+          const command = toolUseData.command ?? '';
+
+          // Report all detections asynchronously (don't wait)
+          for (const detection of detections) {
+            reportDetection(detection, command).catch(() => {
+              // Silent failure - platform reporting shouldn't block the CLI
+            });
+          }
+        } catch {
+          // If we can't parse stdin or report fails, continue anyway
+        }
+      }
+
       if (config.globalSettings.jsonOutput) {
         console.log(JSON.stringify({ detections }, null, 2));
       } else {

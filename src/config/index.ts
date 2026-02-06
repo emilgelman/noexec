@@ -2,3 +2,4 @@ export * from './types';
 export * from './defaults';
 export * from './loader';
 export * from './validator';
+export * from './platform';

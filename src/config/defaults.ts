@@ -87,4 +87,10 @@ export const DEFAULT_CONFIG: NoExecConfig = {
     exitOnDetection: true,
     jsonOutput: false,
   },
+  platform: {
+    enabled: false,
+    apiUrl: 'https://platform.noexec.io/api',
+    apiKey: '',
+    teamId: '',
+  },
 };

@@ -107,7 +107,15 @@ export interface GlobalSettings {
   jsonOutput: boolean;
 }
 
+export interface PlatformConfig {
+  enabled: boolean;
+  apiUrl: string;
+  apiKey: string;
+  teamId: string;
+}
+
 export interface NoExecConfig {
   detectors: DetectorsConfig;
   globalSettings: GlobalSettings;
+  platform?: PlatformConfig;
 }
