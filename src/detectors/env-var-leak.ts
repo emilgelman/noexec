@@ -51,8 +51,67 @@ const DANGEROUS_COMMAND_CONTEXTS = [
   /\bgit\s+commit\b[^\n]*\$/,
 ];
 
+// Indirect environment variable exposure patterns
+const INDIRECT_DUMP_PATTERNS = [
+  // Dump all environment variables
+  /\b(?:env|printenv|export)\s*(?:\||$)/,
+
+  // Grep for secrets in env
+  /\b(?:env|printenv|export|set)\s+\|\s*grep\s+(?:-[^\n]+\s+)?(?:SECRET|KEY|TOKEN|PASSWORD|CREDENTIAL)/i,
+
+  // Display environment via set
+  /\bset\s*(?:\||$)/,
+
+  // Cat .env files
+  /\bcat\s+[^\n]*\.env(?:\.[^\s]*)?/,
+
+  // Less/more .env files
+  /\b(?:less|more|head|tail)\s+[^\n]*\.env/,
+
+  // Copy .env files
+  /\bcp\s+[^\n]*\.env/,
+
+  // Print env to files
+  /\b(?:env|printenv)\s*>[^>]/,
+];
+
+// Safe contexts where env vars are just being checked, not exposed
+const SAFE_CONTEXTS = [
+  // Variable assignments (not exposure) - one var assigned to another
+  /^[A-Z_]+="\$[A-Z_]+"$/,
+];
+
+/**
+ * Check if the command is in a safe context
+ */
+function isSafeContext(command: string): boolean {
+  for (const pattern of SAFE_CONTEXTS) {
+    if (pattern.test(command)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function detectEnvVarLeak(toolUseData: ToolUseData): Promise<Detection | null> {
   const toolInput = JSON.stringify(toolUseData);
+
+  // Check for indirect dumps first (high priority)
+  for (const pattern of INDIRECT_DUMP_PATTERNS) {
+    if (pattern.test(toolInput)) {
+      return Promise.resolve({
+        severity: 'high',
+        message:
+          'Command dumps environment variables to output - may expose multiple secrets at once',
+        detector: 'env-var-leak',
+      });
+    }
+  }
+
+  // Skip if in safe context
+  if (isSafeContext(toolInput)) {
+    return Promise.resolve(null);
+  }
 
   // Check for sensitive environment variables
   for (const pattern of SENSITIVE_ENV_VAR_PATTERNS) {

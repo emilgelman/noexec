@@ -4,6 +4,12 @@ node_modules/
 # Build output
 dist/
 
+# Test outputs (TypeScript compilation artifacts)
+test/**/*.js
+test/**/*.d.ts
+test/**/*.js.map
+test/**/*.d.ts.map
+
 # Logs
 *.log
 npm-debug.log*

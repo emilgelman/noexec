@@ -59,6 +59,16 @@ export default tseslint.config(
     },
   },
   {
-    ignores: ['dist/', 'node_modules/', 'coverage/', '*.config.js', '*.config.ts', 'index.js'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      'coverage/',
+      'test/**/*',
+      '**/*.test.ts',
+      '**/*.spec.ts',
+      '*.config.js',
+      '*.config.ts',
+      'index.js',
+    ],
   }
 );
