@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { detectGitForceOperation } from '../../../src/detectors/git-force-operations.js';
-import { detectDestructiveCommand } from '../../../src/detectors/destructive-commands.js';
-import { detectCredentialLeak } from '../../../src/detectors/credential-leak.js';
-import { detectEnvVarLeak } from '../../../src/detectors/env-var-leak.js';
+import { detectGitForceOperation } from '../../src/detectors/git-force-operations';
+import { detectDestructiveCommand } from '../../src/detectors/destructive-commands';
+import { detectCredentialLeak } from '../../src/detectors/credential-leak';
+import { detectEnvVarLeak } from '../../src/detectors/env-var-leak';
 
 describe('Real-World Tests - Developer Workflows', () => {
   it('should not flag safe git operations', async () => {

