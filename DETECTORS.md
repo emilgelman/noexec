@@ -2368,6 +2368,7 @@ npm test
 | Detector                       | What It Catches                                        | Severity     | Key Features                                                  |
 | ------------------------------ | ------------------------------------------------------ | ------------ | ------------------------------------------------------------- |
 | **Credential Leak**            | API keys, tokens, secrets hardcoded in commands        | High         | 15+ service patterns, entropy analysis, placeholder detection |
+| **Credential Harvesting**      | Stealing stored credentials from filesystem            | High         | 10 categories (SSH, AWS, browsers, K8s, etc.), safe operation whitelist |
 | **Destructive Commands**       | rm -rf, disk operations, fork bombs, system damage     | High         | Safe path whitelist, context-aware                            |
 | **Git Force Operations**       | Force push, hard reset, history rewriting              | High/Medium  | Allows --force-with-lease, protected branches                 |
 | **Env Var Leak**               | Secrets in environment variables exposed to output     | High/Medium  | Context-aware (safe vs dangerous usage), indirect dumps       |
