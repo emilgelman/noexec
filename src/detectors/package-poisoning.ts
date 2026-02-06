@@ -282,18 +282,21 @@ const LEGITIMATE_GEM_PACKAGES = [
 // Package manager commands and patterns
 const PACKAGE_MANAGER_PATTERNS = {
   npm: {
-    install: /\bnpm\s+(?:install|i|add)\s+(?:--[\w-]+\s+)*(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9/_-]+)(?:@[\w.-]+)?/gi,
+    install:
+      /\bnpm\s+(?:install|i|add)\s+(?:--[\w-]+\s+)*(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9/_-]+)(?:@[\w.-]+)?/gi,
     registry: /\bnpm\s+config\s+set\s+registry\s+/,
     source: /\bnpm\s+(?:install|i|add)\s+(?:https?|git\+https?|git\+ssh|file):\/\//,
     ignoreScripts: /\bnpm\s+(?:install|i|add)\s+[^\n]*--ignore-scripts/,
   },
   yarn: {
-    install: /\byarn\s+(?:workspace\s+[\w-]+\s+)?(?:add|install)\s+(?:--[\w-]+\s+)*(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9/_-]+)(?:@[\w.-]+)?/gi,
+    install:
+      /\byarn\s+(?:workspace\s+[\w-]+\s+)?(?:add|install)\s+(?:--[\w-]+\s+)*(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9/_-]+)(?:@[\w.-]+)?/gi,
     registry: /\byarn\s+config\s+set\s+registry\s+/,
     source: /\byarn\s+(?:add|install)\s+(?:https?|git\+https?|git\+ssh|file):\/\//,
   },
   pnpm: {
-    install: /\bpnpm\s+(?:install|add|i)\s+(?:--[\w-]+\s+)*(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9/@/_-]+)(?:@[\w.-]+)?/gi,
+    install:
+      /\bpnpm\s+(?:install|add|i)\s+(?:--[\w-]+\s+)*(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9/@/_-]+)(?:@[\w.-]+)?/gi,
     registry: /\bpnpm\s+config\s+set\s+registry\s+/,
     source: /\bpnpm\s+(?:install|add|i)\s+(?:https?|git\+https?|git\+ssh|file):\/\//,
   },
@@ -342,9 +345,9 @@ function levenshteinDistance(str1: string, str2: string): number {
   const len2 = str2.length;
 
   // Create a 2D array for dynamic programming
-  const dp: number[][] = Array(len1 + 1)
-    .fill(null)
-    .map(() => Array(len2 + 1).fill(0));
+  const dp: number[][] = Array.from({ length: len1 + 1 }, () =>
+    Array.from({ length: len2 + 1 }, () => 0)
+  );
 
   // Initialize base cases
   for (let i = 0; i <= len1; i++) {
@@ -400,7 +403,7 @@ function findTyposquat(
 
   for (const legit of legitimatePackages) {
     const legitLower = legit.toLowerCase();
-    
+
     // Exact match - not a typosquat
     if (cleanLower === legitLower) {
       return null;
@@ -416,10 +419,8 @@ function findTyposquat(
         // Prevent false positives for packages that are both legitimate
         // e.g., numpy and sympy are both real packages, just similar
         // Check if the package name itself is in the legitimate list
-        const isLegitimate = legitimatePackages.some(
-          pkg => pkg.toLowerCase() === cleanLower
-        );
-        
+        const isLegitimate = legitimatePackages.some((pkg) => pkg.toLowerCase() === cleanLower);
+
         if (!isLegitimate) {
           return legit;
         }
@@ -438,26 +439,53 @@ function extractPackageNames(
   packageManager: 'npm' | 'yarn' | 'pnpm' | 'pip' | 'cargo' | 'gem' | 'go'
 ): string[] {
   const packages: string[] = [];
-  
+
   // Common keywords to filter out
-  const keywords = ['install', 'add', 'i', 'npm', 'yarn', 'pnpm', 'pip', 'pip3', 'cargo', 'gem', 'go', 'get', 'workspace'];
-  
+  const keywords = [
+    'install',
+    'add',
+    'i',
+    'npm',
+    'yarn',
+    'pnpm',
+    'pip',
+    'pip3',
+    'cargo',
+    'gem',
+    'go',
+    'get',
+    'workspace',
+  ];
+
   // For npm/yarn/pnpm/pip - split by whitespace and filter
   if (packageManager === 'npm' || packageManager === 'yarn' || packageManager === 'pnpm') {
+    // Check if this is actually an npm/yarn/pnpm command
+    if (!/\b(npm|yarn|pnpm)\s+/.test(command)) {
+      return [];
+    }
+
     const tokens = command.split(/\s+/);
     for (const token of tokens) {
       // Skip flags
-      if (token.startsWith('--') || token === '-g' || token === '-D' || token === '--save-dev') continue;
+      if (token.startsWith('--') || token === '-g' || token === '-D' || token === '--save-dev')
+        continue;
       // Skip keywords
       if (keywords.includes(token.toLowerCase())) continue;
       // Skip URLs and paths
-      if (token.startsWith('http://') || token.startsWith('https://') || 
-          token.startsWith('git+') || token.startsWith('file:') || 
-          token.startsWith('/')) continue;
-      
+      if (
+        token.startsWith('http://') ||
+        token.startsWith('https://') ||
+        token.startsWith('git+') ||
+        token.startsWith('file:') ||
+        token.startsWith('/')
+      )
+        continue;
+
       // Extract package name (strip version)
-      const pkgMatch = /^(@?[a-z0-9][a-z0-9@./_-]*)(?:@[\d\w.-]+)?$/i.exec(token);
-      if (pkgMatch && pkgMatch[1]) {
+      const pkgMatch = /^(@[a-z0-9-]+\/[a-z0-9-]+|[a-z0-9][a-z0-9._/-]*)(?:@[\d][\d\w.-]*)?$/i.exec(
+        token
+      );
+      if (pkgMatch?.[1]) {
         const pkg = pkgMatch[1];
         // Must have at least one letter/digit after stripping
         if (/[a-z0-9]/i.test(pkg)) {
@@ -466,15 +494,25 @@ function extractPackageNames(
       }
     }
   } else if (packageManager === 'pip') {
+    // Check if this is actually a pip command
+    if (!/\bpip(?:3)?\s+/.test(command)) {
+      return [];
+    }
+
     const tokens = command.split(/\s+/);
     for (const token of tokens) {
       if (token.startsWith('--') || token.startsWith('-')) continue;
       if (keywords.includes(token.toLowerCase())) continue;
-      if (token.startsWith('http://') || token.startsWith('https://') || 
-          token.startsWith('git+') || token.startsWith('/')) continue;
-      
+      if (
+        token.startsWith('http://') ||
+        token.startsWith('https://') ||
+        token.startsWith('git+') ||
+        token.startsWith('/')
+      )
+        continue;
+
       const pkgMatch = /^([a-z0-9][a-z0-9_-]*)(?:==[\w.-]+)?$/i.exec(token);
-      if (pkgMatch && pkgMatch[1]) {
+      if (pkgMatch?.[1]) {
         packages.push(pkgMatch[1]);
       }
     }
@@ -483,7 +521,7 @@ function extractPackageNames(
     const pattern = PACKAGE_MANAGER_PATTERNS[packageManager].install;
     let match;
     pattern.lastIndex = 0;
-    
+
     while ((match = pattern.exec(command)) !== null) {
       if (match[1]) {
         packages.push(match[1]);
@@ -499,7 +537,7 @@ function extractPackageNames(
  */
 export function detectPackagePoisoning(toolUseData: ToolUseData): Promise<Detection | null> {
   const toolInput = JSON.stringify(toolUseData);
-  const command = toolUseData.command || '';
+  const command = toolUseData.command ?? '';
 
   // Check for dangerous contexts first (high severity)
   for (const pattern of DANGEROUS_CONTEXTS) {
@@ -556,7 +594,11 @@ export function detectPackagePoisoning(toolUseData: ToolUseData): Promise<Detect
   }
 
   // Check for root/sudo installs without -g/--global
-  if (/\bsudo\s+(?:npm|yarn|pnpm|pip|pip3|gem)\s+(?:install|add|i)\s+(?!.*-g|.*--global)/.test(toolInput)) {
+  if (
+    /\bsudo\s+(?:npm|yarn|pnpm|pip|pip3|gem)\s+(?:install|add|i)\s+(?!.*-g|.*--global)/.test(
+      toolInput
+    )
+  ) {
     return Promise.resolve({
       severity: 'medium',
       message: 'Using sudo/root for package installation (unnecessary privilege escalation)',
