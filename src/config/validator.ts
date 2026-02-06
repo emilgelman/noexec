@@ -12,11 +12,23 @@ export class ConfigValidationError extends Error {
 
 const VALID_SEVERITIES = ['high', 'medium', 'low'];
 const VALID_DETECTOR_NAMES = [
+  // Original detectors (5)
   'credential-leak',
   'destructive-commands',
   'git-force-operations',
   'env-var-leak',
   'magic-string',
+  // New detectors (10)
+  'binary-download-execute',
+  'package-poisoning',
+  'security-tool-disabling',
+  'network-exfiltration',
+  'backdoor-persistence',
+  'credential-harvesting',
+  'code-injection',
+  'container-escape',
+  'archive-bomb',
+  'process-manipulation',
 ];
 
 function isValidSeverity(value: unknown): value is 'high' | 'medium' | 'low' {

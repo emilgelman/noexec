@@ -41,6 +41,11 @@ export interface ArchiveBombConfig {
   severity: 'high' | 'medium' | 'low';
 }
 
+export interface ProcessManipulationConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
 export interface DetectorsConfig {
   'credential-leak': CredentialLeakConfig;
   'destructive-commands': DestructiveCommandsConfig;
@@ -49,6 +54,7 @@ export interface DetectorsConfig {
   'magic-string': MagicStringConfig;
   'security-tool-disabling': SecurityToolDisablingConfig;
   'archive-bomb': ArchiveBombConfig;
+  'process-manipulation': ProcessManipulationConfig;
 }
 
 export interface GlobalSettings {

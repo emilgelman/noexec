@@ -10,19 +10,19 @@ import type { ArchiveBombConfig } from '../config/types';
  */
 const UNSAFE_EXTRACTION_PATTERNS = [
   // tar extract from untrusted sources
-  /\btar\s+[^|&;]*(?:xf|xvf|xzf|xjf|extract)\b[^|&;]*(?:https?:\/\/|ftp:\/\/|curl|wget)/,
-  
+  /\btar\s+[^|&;]*(?:xf|xvf|xzf|xjf|x|extract)\b[^|&;]*(?:https?:\/\/|ftp:\/\/|curl|wget)/,
+
   // unzip from URL or untrusted source
   /\bunzip\b[^|&;]*(?:https?:\/\/|ftp:\/\/|curl|wget)/,
-  
+
   // 7z extract from URL
   /\b7z\s+[^|&;]*x\b[^|&;]*(?:https?:\/\/|ftp:\/\/|curl|wget)/,
-  
+
   // Piped extraction (curl | tar, wget | tar)
-  /(?:curl|wget)\b[^\n|]*\|\s*tar\s+[^|&;]*(?:x|extract)/,
+  /(?:curl|wget)\b[^\n|]*\|\s*(?:gunzip\s*\|)?[^|]*\btar\s+[^|&;]*(?:x|extract)/,
   /(?:curl|wget)\b[^\n|]*\|\s*unzip\b/,
   /(?:curl|wget)\b[^\n|]*\|\s*7z\s+x\b/,
-  
+
   // tar from stdin without validation
   /\btar\s+[^|&;]*(?:xf|xvf|xzf|xjf)\s+-\b/,
 ];
@@ -33,68 +33,49 @@ const UNSAFE_EXTRACTION_PATTERNS = [
 const PATH_TRAVERSAL_PATTERNS = [
   // Multiple directory traversal sequences
   /(?:\.\.\/){2,}/,
-  /\.\.[\\\/]\.\.[\\\/]/,
-  
+  /\.\.[\\/]\.\.[\\/]/,
+
   // Path traversal to specific sensitive directories
-  /\.\.[\\\/]+etc[\\\/]passwd/,
-  /\.\.[\\\/]+etc[\\\/]shadow/,
-  /\.\.[\\\/]+root[\\\/]/,
-  /\.\.[\\\/]+home[\\\/]/,
-  
-  // Archive commands with path traversal
-  /\b(?:tar|unzip|7z)\b[^&;|]*\.\.[\\\/]/,
-  
-  // Absolute paths in archive context (suspicious)
-  /\b(?:tar|unzip|7z)\b[^&;|]*(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/root|\/bin|\/sbin)/,
+  /\.\.[\\/]+etc[\\/]passwd/,
+  /\.\.[\\/]+etc[\\/]shadow/,
+  /\.\.[\\/]+etc[\\/]/,
+  /\.\.[\\/]+root[\\/]/,
+  /\.\.[\\/]+home[\\/]/,
+
+  // Archive commands with path traversal (anywhere in the command)
+  /\b(?:tar|unzip|7z)\b[^&;|]*\.\./,
 ];
 
 /**
  * Extracting to sensitive/dangerous locations
  */
 const DANGEROUS_EXTRACTION_LOCATIONS = [
-  // Extract to system directories
-  /\b(?:tar|unzip|7z)\b[^&;|]*(?:-C|--directory|cd)[^&;|]*(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/bin|\/sbin|\/root)/,
-  
-  // Extract directly to system paths
-  /\b(?:tar|unzip|7z)\b[^&;|]*xf[^&;|]*(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/bin|\/sbin)/,
-  
+  // Extract to system directories with -C or --directory (space or = separator)
+  /\b(?:tar|unzip|7z)\b[^&;|]*(?:-C|--directory)[^&;|]*[\s=]+(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/bin|\/sbin|\/root)(?!\/shm)/,
+
+  // unzip -d option
+  /\bunzip\b[^&;|]*-d\s*(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/bin|\/sbin|\/root)/,
+
   // cd to system dir then extract
   /cd\s+(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/bin|\/sbin|\/root)[^&;]*&&[^&;]*(?:tar|unzip|7z)/,
-  
-  // Extract with absolute path output
-  /\bunzip\b[^&;|]*-d\s*(?:\/etc|\/usr\/bin|\/usr\/local\/bin|\/bin|\/sbin)/,
 ];
 
 /**
  * Missing safety flags in tar operations
  */
-const MISSING_SAFETY_FLAGS = [
-  // tar without --no-same-owner (symbolic link attack vector)
-  {
-    pattern: /\btar\s+(?!.*--no-same-owner)[^&;|]*(?:xf|xvf|xzf|xjf)\b/,
-    message: 'tar extraction without --no-same-owner flag (vulnerable to symbolic link attacks)',
-  },
-  
-  // tar without --no-same-permissions
-  {
-    pattern: /\btar\s+(?!.*--no-same-permissions)[^&;|]*(?:xf|xvf|xzf|xjf)\b/,
-    message: 'tar extraction without --no-same-permissions flag (may preserve dangerous permissions)',
-  },
-];
-
 /**
  * Recursive or nested extraction patterns (archive bomb indicators)
  */
 const RECURSIVE_EXTRACTION_PATTERNS = [
   // Find and extract pattern (extracting many archives)
   /find\b[^&;|]*\.(zip|tar|gz|tgz|bz2|xz|7z)[^&;|]*\|\s*xargs\s+(?:tar|unzip|7z)/,
-  
+
   // Loop through archives and extract
   /for\b[^;]*in\b[^;]*\.(zip|tar|gz|tgz)[^;]*;\s*do[^;]*(?:tar|unzip|7z)[^;]*;/,
-  
+
   // Extracting archives recursively with wildcards
   /\b(?:tar|unzip|7z)\b[^&;|]*\*\.(?:zip|tar|gz|tgz|bz2|xz|7z)/,
-  
+
   // Extract and extract again (nested)
   /\b(?:tar|unzip|7z)\b[^&;]*&&[^&;]*\b(?:tar|unzip|7z)\b/,
 ];
@@ -105,7 +86,7 @@ const RECURSIVE_EXTRACTION_PATTERNS = [
 const LARGE_FILE_EXTRACTION_PATTERNS = [
   // Piped extraction without any size limits or validation
   /(?:curl|wget)\b[^|]*\|\s*(?:tar|unzip|7z)\b(?!.*--max-size|--limit)/,
-  
+
   // Extract archives without space checks
   /\b(?:tar|unzip|7z)\b[^&;]*(?:xf|extract|x)\b(?!.*df|.*du|.*disk|.*space)/,
 ];
@@ -116,24 +97,24 @@ const LARGE_FILE_EXTRACTION_PATTERNS = [
 const ZIP_SLIP_PATTERNS = [
   // Python zipfile without path validation
   /\bZipFile\b[^;]*\.extractall\(/,
-  /\bzipfile\.extract\b(?!.*validatepath|.*sanitize|.*check)/,
-  
+  /\bzipfile\.extract(?:all)?\b(?!.*validatepath|.*sanitize|.*check)/,
+
   // Python tarfile without validation
   /\btarfile\.extractall\b(?!.*filter|.*safe)/,
   /\bTarFile\b[^;]*\.extractall\(/,
-  
+
   // Java zip extraction without validation
-  /\bZipInputStream\b[^;]*\.getNextEntry\b(?!.*canonicalPath|.*validate)/,
+  /\bZipInputStream\b/,
   /\bnew\s+ZipFile\b[^;]*\.extract\b(?!.*validate|.*sanitize)/,
-  
+
   // Node.js extraction without validation
-  /\bunzipper\.Extract\b(?!.*validate|.*filter)/,
-  /\bextract-zip\b[^;]*(?!.*validate|.*filter)/,
+  /unzipper.*Extract/,
+  /\bextract-zip\b/,
   /\btar\.x\b(?!.*filter|.*strip)/,
-  
+
   // Ruby zip extraction
   /\bZip::File\.open\b[^;]*\.extract\b(?!.*validate|.*sanitize)/,
-  
+
   // .NET extraction
   /\bZipFile\.ExtractToDirectory\b(?!.*validate|.*sanitize)/,
 ];
@@ -146,22 +127,19 @@ const SAFE_ARCHIVE_PATTERNS = [
   /\btar\s+(?:tf|tvf|tzf|tjf|--list)\b/,
   /\bunzip\s+-l\b/,
   /\b7z\s+l\b/,
-  
-  // Extracting to current directory from local files
-  /\btar\s+[^&;|]*(?:xf|xvf)\s+(?!.*https?:\/\/)(?!.*curl|wget)[a-zA-Z0-9_\-./]+\.tar/,
-  
+
   // Extracting with explicit safety flags
   /\btar\s+[^&;|]*--no-same-owner[^&;|]*--no-same-permissions/,
-  
+
   // Creating archives (not extracting)
   /\btar\s+(?:cf|cvf|czf|cjf|--create)\b/,
   /\bzip\s+-r\b/,
   /\b7z\s+a\b/,
-  
+
   // Validation before extraction
   /\b(?:tar|unzip|7z)\b[^;]*&&\s*grep\b/,
   /\b(?:tar|unzip)\b[^;]*\|\s*grep\s+-v\s+\.\./,
-  
+
   // Package managers (safe)
   /\b(?:apt|yum|dnf|pacman|brew|npm|pip|cargo)\b[^&;|]*install/,
 ];
@@ -170,7 +148,8 @@ const SAFE_ARCHIVE_PATTERNS = [
  * Sensitive file patterns that shouldn't be in archives
  */
 const SENSITIVE_FILE_IN_ARCHIVE = [
-  /\b(?:tar|unzip|7z)\b[^&;|]*(?:passwd|shadow|id_rsa|id_dsa|\.pem|\.key|\.env|credentials|secret)/,
+  // Only check extraction (-x, extract, xf, etc.) not creation (-c, -czf)
+  /\b(?:tar|unzip|7z)\b[^&;|]*(?:x|extract)[^&;|]*(?:passwd|shadow|id_rsa|id_dsa|\.pem|\.key|\.env|credentials|secret)/,
 ];
 
 /**
@@ -209,20 +188,25 @@ function hasMissingSafetyFlags(command: string): { missing: boolean; message: st
   if (!/\btar\s+[^&;|]*(?:xf|xvf|xzf|xjf|extract)\b/.test(command)) {
     return { missing: false, message: '' };
   }
-  
-  // Check if it's a safe operation (local file, trusted source)
-  if (isSafeArchiveOperation(command)) {
+
+  // Skip if it's explicitly a safe operation (listing, creating)
+  if (/\btar\s+(?:tf|tvf|tzf|tjf|--list|cf|cvf|czf|cjf|--create)\b/.test(command)) {
     return { missing: false, message: '' };
   }
-  
+
+  // Skip if both safety flags are present
+  if (command.includes('--no-same-owner') && command.includes('--no-same-permissions')) {
+    return { missing: false, message: '' };
+  }
+
   // Check for missing --no-same-owner (most critical)
-  if (!/--no-same-owner/.test(command)) {
+  if (!command.includes('--no-same-owner')) {
     return {
       missing: true,
       message: 'tar extraction without --no-same-owner flag (vulnerable to symbolic link attacks)',
     };
   }
-  
+
   return { missing: false, message: '' };
 }
 
