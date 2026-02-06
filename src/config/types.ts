@@ -46,6 +46,43 @@ export interface ProcessManipulationConfig {
   severity: 'high' | 'medium' | 'low';
 }
 
+export interface BinaryDownloadExecuteConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+  trustedDomains?: string[];
+}
+
+export interface PackagePoisoningConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface NetworkExfiltrationConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+  trustedDomains?: string[];
+}
+
+export interface BackdoorPersistenceConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface CredentialHarvestingConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface CodeInjectionConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
+export interface ContainerEscapeConfig {
+  enabled: boolean;
+  severity: 'high' | 'medium' | 'low';
+}
+
 export interface DetectorsConfig {
   'credential-leak': CredentialLeakConfig;
   'destructive-commands': DestructiveCommandsConfig;
@@ -55,6 +92,13 @@ export interface DetectorsConfig {
   'security-tool-disabling': SecurityToolDisablingConfig;
   'archive-bomb': ArchiveBombConfig;
   'process-manipulation': ProcessManipulationConfig;
+  'binary-download-execute': BinaryDownloadExecuteConfig;
+  'package-poisoning': PackagePoisoningConfig;
+  'network-exfiltration': NetworkExfiltrationConfig;
+  'backdoor-persistence': BackdoorPersistenceConfig;
+  'credential-harvesting': CredentialHarvestingConfig;
+  'code-injection': CodeInjectionConfig;
+  'container-escape': ContainerEscapeConfig;
 }
 
 export interface GlobalSettings {

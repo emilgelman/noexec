@@ -270,7 +270,7 @@ export function detectBackdoorPersistence(
     return Promise.resolve(null);
   }
 
-  const severity = config?.severity ?? 'critical';
+  const severity = config?.severity ?? 'high';
   const toolInput = JSON.stringify(toolUseData);
 
   // Check for safe operations first

@@ -339,13 +339,7 @@ export function detectContainerEscape(
   }
 
   const severity = config?.severity ?? 'high';
-  const allowPrivilegedForCI = config?.allowPrivilegedForCI ?? false;
   const toolInput = JSON.stringify(toolUseData);
-
-  // Check for safe contexts if configured
-  if (allowPrivilegedForCI && hasSafeContext(toolInput)) {
-    return Promise.resolve(null);
-  }
 
   const detections: DetectionDetails[] = [];
 

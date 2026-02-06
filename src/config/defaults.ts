@@ -35,29 +35,49 @@ export const DEFAULT_CONFIG: NoExecConfig = {
         'PRIVATE_KEY',
       ],
     },
+    'magic-string': {
+      enabled: true,
+      severity: 'high',
+    },
     'binary-download-execute': {
       enabled: true,
       severity: 'high',
       trustedDomains: [],
     },
+    'package-poisoning': {
+      enabled: true,
+      severity: 'high',
+    },
     'security-tool-disabling': {
       enabled: true,
       severity: 'high',
     },
+    'network-exfiltration': {
+      enabled: true,
+      severity: 'high',
+      trustedDomains: [],
+    },
     'backdoor-persistence': {
+      enabled: true,
+      severity: 'high',
+    },
+    'credential-harvesting': {
+      enabled: true,
+      severity: 'high',
+    },
+    'code-injection': {
       enabled: true,
       severity: 'high',
     },
     'container-escape': {
       enabled: true,
       severity: 'high',
-      allowPrivilegedForCI: false,
     },
-    'credential-harvesting': {
+    'archive-bomb': {
       enabled: true,
       severity: 'high',
     },
-    'magic-string': {
+    'process-manipulation': {
       enabled: true,
       severity: 'high',
     },

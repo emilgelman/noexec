@@ -12,7 +12,7 @@ const DEBUGGER_ATTACHMENT_PATTERNS = [
   /\bgdb\s+(?:-p|--pid)\s+[0-9]+/,
   /\bgdb\s+(?:-p|--pid)=?\s*\$\(/, // gdb -p $(pgrep ...) or gdb -p=$(pgrep ...)
   /\bgdb\s+--attach\s+[0-9]+/,
-  /\bgdb\s+[^\s]+\s+[0-9]+\s*$/, // gdb program pid (no additional args)
+  /\bgdb\s+[^\s]+\s+[0-9]+\b/, // gdb program pid
 
   // strace attachment
   /\bstrace\s+(?:-p|--attach)\s+[0-9]+/,
@@ -235,13 +235,13 @@ const LD_PRELOAD_PATTERNS = [
 // Safe debugging patterns (excluded from detection)
 const SAFE_DEBUGGING_PATTERNS = [
   // Debugging own code in current directory
-  /\bgdb\s+\.\/[^\s]+(?:\s|$)/,
+  /\bgdb\s+\.\/[^\s]+\b/,
   /\bgdb\s+--args\s+\.\/[^\s]+/,
-  /\blldb\s+\.\/[^\s]+(?:\s|$)/,
+  /\blldb\s+\.\/[^\s]+\b/,
   /\blldb\s+--\s+\.\/[^\s]+/,
 
   // Debugging with core files
-  /\bgdb\s+[^\s]+\s+core(?:\s|$)/,
+  /\bgdb\s+[^\s]+\s+core\b/,
   /\blldb\s+--core\s+core\b/,
 
   // strace on own process (not attachment with -p)
@@ -265,25 +265,25 @@ const SAFE_DEBUGGING_PATTERNS = [
 
 // Legitimate monitoring tools (excluded from detection)
 const SAFE_MONITORING_PATTERNS = [
-  // System monitoring (not with kill/pkill/killall) - must be standalone commands
-  /^top$/,
-  /^htop$/,
-  /^ps\s+aux$/,
-  /^ps\s+-ef$/,
-  /^ps\s+--forest$/,
-  /^pstree$/,
+  // System monitoring (not with kill/pkill/killall and not after LD_PRELOAD)
+  /^(?!.*LD_PRELOAD).*\btop\b/,
+  /^(?!.*LD_PRELOAD).*\bhtop\b/,
+  /^(?!.*LD_PRELOAD).*\bps\s+aux\b/,
+  /^(?!.*LD_PRELOAD).*\bps\s+-ef\b/,
+  /^(?!.*LD_PRELOAD).*\bps\s+--forest\b/,
+  /^(?!.*LD_PRELOAD).*\bpstree\b/,
 
   // Performance monitoring
   /\bperf\s+(?:top|stat|record)\b/,
   /\bsysstat\b/,
-  /^sar$/,
-  /^vmstat$/,
-  /^iostat$/,
+  /\bsar\b/,
+  /\bvmstat\b/,
+  /\biostat\b/,
 
   // Process inspection (read-only)
-  /^lsof$/,
-  /^fuser\b/,
-  /^pmap\s+[0-9]+$/,
+  /\blsof\b/,
+  /\bfuser\b/,
+  /\bpmap\s+[0-9]+\b/,
 
   // strace for performance analysis (read-only, not attachment)
   /\bstrace\s+-e\s+trace=(?:open|read|write|stat)\b/,

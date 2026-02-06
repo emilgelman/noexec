@@ -7,6 +7,15 @@ import { detectDestructiveCommand } from '../detectors/destructive-commands';
 import { detectGitForceOperation } from '../detectors/git-force-operations';
 import { detectEnvVarLeak } from '../detectors/env-var-leak';
 import { detectSecurityToolDisabling } from '../detectors/security-tool-disabling';
+import { detectBinaryDownloadExecute } from '../detectors/binary-download-execute';
+import { detectPackagePoisoning } from '../detectors/package-poisoning';
+import { detectNetworkExfiltration } from '../detectors/network-exfiltration';
+import { detectBackdoorPersistence } from '../detectors/backdoor-persistence';
+import { detectCredentialHarvesting } from '../detectors/credential-harvesting';
+import { detectCodeInjection } from '../detectors/code-injection';
+import { detectContainerEscape } from '../detectors/container-escape';
+import { detectArchiveBomb } from '../detectors/archive-bomb';
+import { detectProcessManipulation } from '../detectors/process-manipulation';
 import { loadConfig, type NoExecConfig } from '../config';
 
 interface AnalyzeOptions {
@@ -44,6 +53,26 @@ function getSuggestion(detector: string): string | null {
     'env-var-leak': 'Avoid exporting sensitive variables. Consider using .env files or vaults.',
     'magic-string':
       'Hardcoded sensitive data detected. Use configuration files or environment variables.',
+    'binary-download-execute':
+      'Avoid piping downloaded content directly to shell. Review and save scripts before executing.',
+    'package-poisoning':
+      'Verify package integrity. Use official package managers and check package signatures.',
+    'security-tool-disabling':
+      'Disabling security tools is dangerous. Reconsider if this is necessary.',
+    'network-exfiltration':
+      'Suspicious data exfiltration detected. Verify the destination and data being sent.',
+    'backdoor-persistence':
+      'Persistence mechanism detected. Ensure this is intentional and authorized.',
+    'credential-harvesting':
+      'Credential access detected. Use secure credential management systems.',
+    'code-injection':
+      'Code injection technique detected. Review for security implications.',
+    'container-escape':
+      'Container escape attempt detected. Review privileged operations carefully.',
+    'archive-bomb':
+      'Zip bomb or archive bomb detected. Decompress with limits and monitoring.',
+    'process-manipulation':
+      'Process manipulation detected. Ensure debugging/profiling is intentional.',
   };
   return suggestions[detector] || null;
 }
@@ -92,6 +121,46 @@ export async function analyzeStdin(input: string, config?: NoExecConfig): Promis
     {
       fn: detectMagicString,
       config: activeConfig.detectors['magic-string'],
+    },
+    {
+      fn: detectBinaryDownloadExecute,
+      config: activeConfig.detectors['binary-download-execute'],
+    },
+    {
+      fn: detectPackagePoisoning,
+      config: activeConfig.detectors['package-poisoning'],
+    },
+    {
+      fn: detectSecurityToolDisabling,
+      config: activeConfig.detectors['security-tool-disabling'],
+    },
+    {
+      fn: detectNetworkExfiltration,
+      config: activeConfig.detectors['network-exfiltration'],
+    },
+    {
+      fn: detectBackdoorPersistence,
+      config: activeConfig.detectors['backdoor-persistence'],
+    },
+    {
+      fn: detectCredentialHarvesting,
+      config: activeConfig.detectors['credential-harvesting'],
+    },
+    {
+      fn: detectCodeInjection,
+      config: activeConfig.detectors['code-injection'],
+    },
+    {
+      fn: detectContainerEscape,
+      config: activeConfig.detectors['container-escape'],
+    },
+    {
+      fn: detectArchiveBomb,
+      config: activeConfig.detectors['archive-bomb'],
+    },
+    {
+      fn: detectProcessManipulation,
+      config: activeConfig.detectors['process-manipulation'],
     },
   ];
 

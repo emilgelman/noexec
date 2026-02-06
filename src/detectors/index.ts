@@ -3,7 +3,7 @@ export type { Detection, Detector, ToolUseData } from '../types';
 // Original detectors (5)
 export { detectCredentialLeak } from './credential-leak';
 export { detectDestructiveCommand } from './destructive-commands';
-export { detectGitForceOperations } from './git-force-operations';
+export { detectGitForceOperation } from './git-force-operations';
 export { detectEnvVarLeak } from './env-var-leak';
 export { detectMagicString } from './magic-string';
 
