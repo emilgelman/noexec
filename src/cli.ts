@@ -4,7 +4,6 @@ import { Command } from 'commander';
 import { initCommand } from './commands/init';
 import { analyzeCommand } from './commands/analyze';
 import { loginCommand } from './commands/login';
-import { teamSyncCommand } from './commands/team';
 
 const program = new Command();
 
@@ -34,10 +33,5 @@ program
   .option('--password <password>', 'Password')
   .option('--api-url <url>', 'Custom API URL')
   .action(loginCommand);
-
-program
-  .command('team')
-  .description('Sync team configuration from platform')
-  .action(teamSyncCommand);
 
 program.parse();

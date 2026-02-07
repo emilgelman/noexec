@@ -88,9 +88,7 @@ export async function loginCommand(options: LoginOptions): Promise<void> {
     console.log(chalk.green.bold('✅ Successfully logged in!\n'));
     console.log(chalk.gray(`   Team: ${response.teamName}`));
     console.log(chalk.gray(`   Team ID: ${response.teamId}\n`));
-    console.log(
-      chalk.cyan('💡 Security detections will now be reported to your team dashboard.\n')
-    );
+    console.log(chalk.cyan('💡 Team config will auto-apply on next command.\n'));
 
     process.exit(0);
   } catch (error) {

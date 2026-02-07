@@ -17,12 +17,65 @@ import { detectContainerEscape } from '../detectors/container-escape';
 import { detectArchiveBomb } from '../detectors/archive-bomb';
 import { detectProcessManipulation } from '../detectors/process-manipulation';
 import { loadConfig, type NoExecConfig } from '../config';
-import { reportDetection } from '../api-client';
+import { reportDetection, fetchTeamConfigCached } from '../api-client';
 import { isPlatformEnabled } from '../config/platform';
 
 interface AnalyzeOptions {
   hook: string;
   config?: string;
+}
+
+/**
+ * Deep merge team config with local config
+ * Local settings override team settings
+ */
+function mergeTeamConfig(
+  localConfig: NoExecConfig,
+  teamConfig: Record<string, unknown> | undefined
+): NoExecConfig {
+  if (!teamConfig) {
+    return localConfig;
+  }
+
+  // Deep clone local config to avoid mutations
+  const merged = JSON.parse(JSON.stringify(localConfig)) as NoExecConfig;
+
+  // Merge team config, but local settings take priority
+  // This is a simple merge - team config provides defaults, local overrides
+  try {
+    if (typeof teamConfig === 'object' && teamConfig !== null) {
+      // Merge detectors if present in team config
+      if ('detectors' in teamConfig && typeof teamConfig.detectors === 'object') {
+        const teamDetectors = teamConfig.detectors as Record<string, unknown>;
+        for (const key in teamDetectors) {
+          if (key in merged.detectors) {
+            const detectorKey = key as keyof typeof merged.detectors;
+            const teamDetector = teamDetectors[key];
+            if (typeof teamDetector === 'object' && teamDetector !== null) {
+              // Merge individual detector config, local values override team values
+              merged.detectors[detectorKey] = {
+                ...teamDetector,
+                ...merged.detectors[detectorKey],
+              } as never;
+            }
+          }
+        }
+      }
+
+      // Merge global settings if present in team config
+      if ('globalSettings' in teamConfig && typeof teamConfig.globalSettings === 'object') {
+        const teamGlobalSettings = teamConfig.globalSettings as Record<string, unknown>;
+        merged.globalSettings = {
+          ...teamGlobalSettings,
+          ...merged.globalSettings,
+        } as typeof merged.globalSettings;
+      }
+    }
+  } catch {
+    // If merge fails, return local config unchanged
+  }
+
+  return merged;
 }
 
 /**
@@ -178,7 +231,16 @@ export async function analyzeStdin(input: string, config?: NoExecConfig): Promis
 
 export async function analyzeCommand(options: AnalyzeOptions): Promise<void> {
   try {
-    const config = loadConfig(options.config);
+    // Load local config
+    let config = loadConfig(options.config);
+
+    // Auto-fetch team config if authenticated (with caching)
+    const teamConfigResponse = await fetchTeamConfigCached();
+    if (teamConfigResponse) {
+      // Merge team config with local config (local overrides team)
+      config = mergeTeamConfig(config, teamConfigResponse.config);
+    }
+
     const stdin = fs.readFileSync(0, 'utf-8');
     const detections = await analyzeStdin(stdin, config);
 

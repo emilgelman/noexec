@@ -1,6 +1,9 @@
 import * as https from 'https';
 import * as http from 'http';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
+import * as os from 'os';
 import type { Detection } from './types';
 import type { PlatformConfig } from './config/types';
 import { loadPlatformConfig } from './config/platform';
@@ -21,6 +24,11 @@ export interface TeamConfigResponse {
   teamId: string;
   teamName: string;
   config?: Record<string, unknown>;
+}
+
+interface CachedTeamConfig {
+  data: TeamConfigResponse;
+  timestamp: number;
 }
 
 export interface LoginResponse {
@@ -187,4 +195,78 @@ export async function fetchTeamConfig(config: PlatformConfig): Promise<TeamConfi
   }
 
   return JSON.parse(response.body) as TeamConfigResponse;
+}
+
+/**
+ * Get the path to the team config cache file
+ */
+function getTeamConfigCachePath(): string {
+  const homeDir = os.homedir();
+  return path.join(homeDir, '.noexec', 'cache', 'team-config.json');
+}
+
+/**
+ * Ensure the cache directory exists
+ */
+function ensureCacheDir(): void {
+  const homeDir = os.homedir();
+  const cacheDir = path.join(homeDir, '.noexec', 'cache');
+
+  if (!fs.existsSync(cacheDir)) {
+    fs.mkdirSync(cacheDir, { recursive: true });
+  }
+}
+
+/**
+ * Fetch team configuration with 1-hour file-based cache
+ * Returns null if user is not authenticated or on any error (silent failure)
+ */
+export async function fetchTeamConfigCached(): Promise<TeamConfigResponse | null> {
+  try {
+    const platformConfig = loadPlatformConfig();
+
+    // If not authenticated, return null silently
+    if (!platformConfig?.apiKey || !platformConfig.teamId) {
+      return null;
+    }
+
+    const cachePath = getTeamConfigCachePath();
+    const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+
+    // Check if cache exists and is fresh
+    if (fs.existsSync(cachePath)) {
+      try {
+        const cacheContent = fs.readFileSync(cachePath, 'utf-8');
+        const cached: CachedTeamConfig = JSON.parse(cacheContent);
+
+        const age = Date.now() - cached.timestamp;
+        if (age < ONE_HOUR) {
+          // Cache is fresh, return cached data
+          return cached.data;
+        }
+      } catch {
+        // If cache is corrupted, continue to fetch fresh data
+      }
+    }
+
+    // Cache miss or stale - fetch fresh data
+    const freshData = await fetchTeamConfig(platformConfig);
+
+    // Save to cache
+    try {
+      ensureCacheDir();
+      const cached: CachedTeamConfig = {
+        data: freshData,
+        timestamp: Date.now(),
+      };
+      fs.writeFileSync(cachePath, JSON.stringify(cached, null, 2), 'utf-8');
+    } catch {
+      // If we can't save cache, that's fine - just continue
+    }
+
+    return freshData;
+  } catch {
+    // Silent failure - if API is unreachable or any error, return null
+    return null;
+  }
 }
